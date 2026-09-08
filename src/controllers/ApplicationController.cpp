@@ -7,6 +7,8 @@
 #include <QMetaType>
 #include <QPointer>
 #include <QThreadPool>
+#include <QClipboard>
+#include <QGuiApplication>
 
 #include <utility>
 
@@ -520,6 +522,23 @@ void ApplicationController::refreshActiveTable()
                 },
                 Qt::QueuedConnection);
         });
+}
+
+void ApplicationController::copyTableCell(int row, int column)
+{
+    const QModelIndex index = m_tableData.index(row, column);
+    if (!index.isValid()) {
+        emit operationCompleted("copyTableCell", false, "Choose a loaded table cell first.", {});
+        return;
+    }
+
+    const QString text = m_tableData.data(index, RowTableModel::FullTextRole).toString();
+    if (QClipboard *clipboard = QGuiApplication::clipboard(); clipboard != nullptr) {
+        clipboard->setText(text);
+        emit operationCompleted("copyTableCell", true, "Cell value copied.", {});
+        return;
+    }
+    emit operationCompleted("copyTableCell", false, "The system clipboard is unavailable.", {});
 }
 
 void ApplicationController::refreshServices()

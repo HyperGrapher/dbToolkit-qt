@@ -52,7 +52,7 @@ add_library(DbToolKitCore STATIC
     src/controllers/ApplicationController.h
 )
 target_include_directories(DbToolKitCore PUBLIC src)
-target_link_libraries(DbToolKitCore PUBLIC Qt6::Core)
+target_link_libraries(DbToolKitCore PUBLIC Qt6::Core Qt6::Gui)
 if(WIN32)
     target_link_libraries(DbToolKitCore PRIVATE advapi32)
 endif()

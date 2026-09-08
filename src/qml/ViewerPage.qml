@@ -510,7 +510,8 @@ Item {
                                 quiet: true
                                 implicitHeight: 25
                                 hint: "Copy cell"
-                                onClicked: page.actionRequested("Copy cell")
+                                enabled: page.selectedRow >= 0 && page.selectedColumn >= 0
+                                onClicked: applicationController.copyTableCell(page.selectedRow, page.selectedColumn)
                             }
                             ActionButton {
                                 text: "Edit value"

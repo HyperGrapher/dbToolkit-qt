@@ -80,6 +80,7 @@ public:
     Q_INVOKABLE void refreshActiveTables();
     Q_INVOKABLE bool openTable(const QString &schemaName, const QString &tableName);
     Q_INVOKABLE void refreshActiveTable();
+    Q_INVOKABLE void copyTableCell(int row, int column);
     Q_INVOKABLE void refreshServices();
     Q_INVOKABLE void startService(const QString &serviceName);
 
