@@ -5,6 +5,7 @@ import QtQuick.Layouts
 Item {
     id: page
     signal actionRequested(string action)
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 24
@@ -12,14 +13,14 @@ Item {
             ColumnLayout {
                 spacing: 6
                 Text {
-                    text: "Exports"
+                    text: "SQL files"
                     color: Theme.text
                     font.pixelSize: 29
                     font.weight: Font.DemiBold
                     font.letterSpacing: -0.6
                 }
                 Text {
-                    text: "A clean snapshot. Ready for whatever comes next."
+                    text: "Move schema and data where your work needs it."
                     color: Theme.muted
                     font.pixelSize: 12
                 }
@@ -28,49 +29,55 @@ Item {
                 Layout.fillWidth: true
             }
             ActionButton {
+                text: "Import SQL"
+                glyph: "upload"
+                onClicked: page.actionRequested("Import SQL")
+            }
+            ActionButton {
                 text: "Export database"
                 glyph: "download"
                 primary: true
                 onClicked: page.actionRequested("Export database")
             }
         }
+
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 158
+            implicitHeight: 142
             radius: 11
-            color: "#1b2638"
-            border.color: "#334966"
+            color: Qt.rgba(Theme.blue.r, Theme.blue.g, Theme.blue.b, 0.12)
+            border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
             RowLayout {
                 anchors.fill: parent
-                anchors.margins: 28
-                spacing: 24
+                anchors.margins: 26
+                spacing: 22
                 Rectangle {
-                    implicitWidth: 66
-                    implicitHeight: 66
-                    radius: 16
-                    color: "#293c59"
+                    implicitWidth: 60
+                    implicitHeight: 60
+                    radius: 15
+                    color: Theme.selected
                     Glyph {
                         anchors.centerIn: parent
-                        name: "download"
-                        implicitWidth: 32
-                        implicitHeight: 32
+                        name: "code"
+                        implicitWidth: 30
+                        implicitHeight: 30
                         ink: Theme.accent
                     }
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 10
+                    spacing: 8
                     Text {
-                        text: "Take your work with you."
+                        text: "Bring a database forward."
                         color: Theme.text
-                        font.pixelSize: 22
+                        font.pixelSize: 21
                         font.weight: Font.DemiBold
                     }
                     Text {
-                        text: "Export your schema and data to a portable SQL file.\nYour next environment is one snapshot away."
+                        text: "Import into a new database or merge into the selected one.\nThe file's embedded database name never changes your chosen target."
                         color: Theme.muted
                         font.pixelSize: 12
-                        lineHeight: 1.5
+                        lineHeight: 1.45
                         wrapMode: Text.WordWrap
                         Layout.fillWidth: true
                     }
@@ -81,6 +88,7 @@ Item {
                 }
             }
         }
+
         RowLayout {
             Text {
                 text: "Recent exports"
@@ -155,16 +163,24 @@ Item {
                             color: Theme.muted
                             font.family: Theme.mono
                             font.pixelSize: 11
+                            horizontalAlignment: Text.AlignRight
+                            Layout.preferredWidth: 76
                         }
-                        Tag {
-                            text: "Complete"
-                            tone: Theme.green
-                            dot: true
+                        Item {
+                            Layout.preferredWidth: 90
+                            implicitHeight: 24
+                            Tag {
+                                anchors.right: parent.right
+                                text: "Complete"
+                                tone: Theme.green
+                                dot: true
+                            }
                         }
                         ActionButton {
                             glyph: "folder"
                             quiet: true
                             hint: "Show export location"
+                            Layout.preferredWidth: 38
                             onClicked: page.actionRequested("Show export location")
                         }
                     }
@@ -175,7 +191,7 @@ Item {
             Layout.fillHeight: true
         }
         Text {
-            text: "Sample export history. No SQL files have been created."
+            text: "Sample export history. No SQL files have been created or imported."
             color: Theme.subtle
             font.pixelSize: 11
         }

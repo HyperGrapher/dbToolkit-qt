@@ -195,10 +195,12 @@ Rectangle {
             color: Theme.line
         }
         ActionButton {
-            text: "Open table viewer"
+            text: inspector.service.running ? "Open table viewer" : "Viewer unavailable offline"
             glyph: "table"
             primary: true
             Layout.fillWidth: true
+            enabled: inspector.service.running
+            hint: inspector.service.running ? "" : "Cached summaries are available; tables require the service."
             onClicked: inspector.browseRequested()
         }
         RowLayout {

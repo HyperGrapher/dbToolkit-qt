@@ -43,8 +43,8 @@ ApplicationWindow {
         previewDialog.open();
     }
 
-    function openViewer() {
-        viewerPage.databaseName = workspacePage.database.name;
+    function openViewerFromWorkspace() {
+        viewerPage.selectDatabase(workspacePage.databaseIndex);
         currentPage = 2;
     }
 
@@ -58,7 +58,7 @@ ApplicationWindow {
     }
     Shortcut {
         sequence: "Ctrl+3"
-        onActivated: window.openViewer()
+        onActivated: window.currentPage = 2
     }
 
     Rectangle {
@@ -90,11 +90,11 @@ ApplicationWindow {
                     gradient: Gradient {
                         GradientStop {
                             position: 0
-                            color: "#5288f4"
+                            color: Theme.accent
                         }
                         GradientStop {
                             position: 1
-                            color: "#335cb5"
+                            color: Theme.blue
                         }
                     }
                     Glyph {
@@ -147,11 +147,11 @@ ApplicationWindow {
                     implicitHeight: 42
                     hoverEnabled: true
                     Accessible.name: modelData.title
-                    onClicked: index === 2 ? window.openViewer() : window.currentPage = index
+                    onClicked: window.currentPage = index
                     background: Rectangle {
                         radius: 7
-                        color: window.currentPage === navButton.index ? "#24324a" : navButton.hovered ? Theme.raised : "transparent"
-                        border.color: navButton.visualFocus ? Theme.accent : window.currentPage === navButton.index ? "#314665" : "transparent"
+                        color: window.currentPage === navButton.index ? Theme.selected : navButton.hovered ? Theme.raised : "transparent"
+                        border.color: navButton.visualFocus ? Theme.accent : window.currentPage === navButton.index ? Theme.accent : "transparent"
                         Behavior on color {
                             ColorAnimation {
                                 duration: 120
@@ -171,7 +171,7 @@ ApplicationWindow {
                         }
                         Text {
                             text: navButton.modelData.title
-                            color: window.currentPage === navButton.index ? "#c1d4ff" : Theme.muted
+                            color: window.currentPage === navButton.index ? Theme.accent : Theme.muted
                             font.pixelSize: 12
                             font.weight: window.currentPage === navButton.index ? Font.DemiBold : Font.Normal
                             Layout.fillWidth: true
@@ -270,8 +270,8 @@ ApplicationWindow {
                 implicitHeight: 86
                 visible: window.height >= 780
                 radius: 8
-                color: "#1b222d"
-                border.color: "#2b3748"
+                color: Theme.raised
+                border.color: Theme.line
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 13
@@ -285,7 +285,7 @@ ApplicationWindow {
                         }
                         Text {
                             text: "Made for local."
-                            color: "#b6c7e6"
+                            color: Theme.text
                             font.pixelSize: 11
                             font.weight: Font.Medium
                         }
@@ -393,7 +393,7 @@ ApplicationWindow {
             currentIndex: window.currentPage
             WorkspacePage {
                 id: workspacePage
-                onBrowseRequested: window.openViewer()
+                onBrowseRequested: window.openViewerFromWorkspace()
                 onActionRequested: action => window.showAction(action)
             }
             ConnectionsPage {
@@ -423,7 +423,7 @@ ApplicationWindow {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         implicitHeight: 29
-        color: "#15191f"
+        color: Theme.sidebar
         Rectangle {
             width: parent.width
             implicitHeight: 1
@@ -486,8 +486,8 @@ ApplicationWindow {
         width: Math.min(460, parent ? parent.width - 48 : 460)
         padding: 16
         background: Rectangle {
-            color: "#273246"
-            border.color: "#45608a"
+            color: Theme.raised
+            border.color: Theme.accent
             radius: 8
         }
         contentItem: Text {

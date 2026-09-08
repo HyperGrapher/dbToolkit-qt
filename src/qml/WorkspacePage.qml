@@ -9,6 +9,7 @@ Item {
     property int databaseIndex: 0
     readonly property var service: PreviewData.services[serviceIndex]
     readonly property var database: PreviewData.databases[databaseIndex]
+    readonly property bool offline: !service.running
     property bool managedOnly: false
     signal browseRequested
     signal actionRequested(string action)
@@ -26,7 +27,7 @@ Item {
                     font.letterSpacing: -0.6
                 }
                 Text {
-                    text: "A clear view of your development databases."
+                    text: page.offline ? "Showing the last successful database snapshot." : "A clear view of your development databases."
                     color: Theme.muted
                     font.pixelSize: 12
                 }
@@ -38,6 +39,8 @@ Item {
                 text: "New database"
                 glyph: "plus"
                 primary: true
+                enabled: !page.offline
+                hint: page.offline ? "Start the service before creating a database" : ""
                 onClicked: page.actionRequested("New database")
             }
         }
@@ -87,12 +90,18 @@ Item {
                 text: String(page.service.databases)
                 tone: Theme.muted
             }
+            Tag {
+                visible: page.offline
+                text: "Cached · 18 min ago"
+                tone: Theme.amber
+                dot: true
+            }
             Item {
                 Layout.fillWidth: true
             }
             Text {
-                text: "Updated just now"
-                color: Theme.subtle
+                text: page.offline ? "Last refreshed 18 min ago" : "Updated just now"
+                color: page.offline ? Theme.amber : Theme.subtle
                 font.pixelSize: 10
             }
             ActionButton {
@@ -100,6 +109,7 @@ Item {
                 quiet: true
                 implicitHeight: 26
                 hint: "Refresh databases"
+                enabled: !page.offline
                 onClicked: page.actionRequested("Refresh")
             }
         }
@@ -326,9 +336,11 @@ Item {
                 onClicked: page.actionRequested("Database details")
             }
             ActionButton {
-                text: "Open table viewer"
+                text: page.offline ? "Viewer unavailable offline" : "Open table viewer"
                 glyph: "table"
                 primary: true
+                enabled: !page.offline
+                hint: page.offline ? "Cached summaries are available; tables require the service." : ""
                 onClicked: page.browseRequested()
             }
         }

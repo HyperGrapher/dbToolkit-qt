@@ -1,13 +1,16 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
     id: page
     signal actionRequested(string action)
+
     ColumnLayout {
         anchors.fill: parent
-        spacing: 24
+        spacing: 22
+
         ColumnLayout {
             spacing: 6
             Text {
@@ -23,110 +26,137 @@ Item {
                 font.pixelSize: 12
             }
         }
+
         Text {
-            text: "WORKSPACE"
+            text: "APPEARANCE"
             color: Theme.subtle
             font.pixelSize: 10
             font.letterSpacing: 1.1
         }
-        Rectangle {
+
+        RowLayout {
             Layout.fillWidth: true
-            implicitHeight: 150
-            radius: 10
-            color: Theme.panel
-            border.color: Theme.line
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 24
-                spacing: 28
-                Rectangle {
-                    implicitWidth: 150
-                    implicitHeight: 96
-                    radius: 7
-                    color: Theme.background
-                    border.color: "#536d98"
-                    Rectangle {
-                        implicitWidth: 32
-                        height: parent.height - 2
-                        x: 1
-                        y: 1
-                        radius: 6
-                        color: "#232b38"
-                    }
-                    Rectangle {
-                        x: 45
-                        y: 15
-                        implicitWidth: 55
-                        implicitHeight: 5
-                        radius: 2
-                        color: "#7f9bc8"
-                    }
-                    Repeater {
-                        model: 3
-                        Rectangle {
-                            required property int index
-                            x: 45
-                            y: 33 + index * 17
-                            implicitWidth: 91
-                            implicitHeight: 10
-                            radius: 3
-                            color: index === 0 ? "#2a3e5d" : "#222936"
-                        }
-                    }
-                    Rectangle {
-                        x: 132
-                        y: 78
-                        implicitWidth: 22
-                        implicitHeight: 22
-                        radius: 11
-                        color: Theme.blue
-                        Glyph {
-                            anchors.centerIn: parent
-                            name: "check"
-                            ink: "white"
-                            implicitWidth: 13
-                            implicitHeight: 13
-                        }
-                    }
-                }
-                ColumnLayout {
+            spacing: 14
+            Repeater {
+                model: Theme.palettes
+                delegate: AbstractButton {
+                    id: themeCard
+                    required property int index
+                    required property var modelData
                     Layout.fillWidth: true
-                    spacing: 8
-                    Text {
-                        text: "Midnight"
-                        color: Theme.text
-                        font.pixelSize: 18
-                        font.weight: Font.DemiBold
+                    implicitHeight: 198
+                    hoverEnabled: true
+                    Accessible.name: modelData.name + " theme"
+                    onClicked: Theme.select(index)
+                    background: Rectangle {
+                        radius: 10
+                        color: themeCard.hovered ? Theme.raised : Theme.panel
+                        border.width: Theme.selectedIndex === themeCard.index ? 2 : 1
+                        border.color: Theme.selectedIndex === themeCard.index ? Theme.accent : Theme.line
                     }
-                    Text {
-                        text: "Less glare. More focus.\nA considered dark palette, everywhere."
-                        color: Theme.muted
-                        font.pixelSize: 12
-                        lineHeight: 1.5
+                    contentItem: ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 10
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: 72
+                            radius: 6
+                            color: themeCard.modelData.background
+                            border.color: themeCard.modelData.line
+                            Rectangle {
+                                implicitWidth: 22
+                                height: parent.height - 2
+                                x: 1
+                                y: 1
+                                radius: 5
+                                color: themeCard.modelData.sidebar
+                            }
+                            Rectangle {
+                                x: 32
+                                y: 14
+                                implicitWidth: 58
+                                implicitHeight: 5
+                                radius: 2
+                                color: themeCard.modelData.accent
+                            }
+                            Repeater {
+                                model: 3
+                                Rectangle {
+                                    required property int index
+                                    x: 32
+                                    y: 29 + index * 13
+                                    implicitWidth: 105
+                                    implicitHeight: 7
+                                    radius: 2
+                                    color: index === 0 ? themeCard.modelData.selected : themeCard.modelData.panel
+                                }
+                            }
+                            Rectangle {
+                                visible: Theme.selectedIndex === themeCard.index
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                anchors.margins: 5
+                                implicitWidth: 20
+                                implicitHeight: 20
+                                radius: 10
+                                color: themeCard.modelData.blue
+                                Glyph {
+                                    anchors.centerIn: parent
+                                    name: "check"
+                                    implicitWidth: 12
+                                    implicitHeight: 12
+                                    ink: "white"
+                                }
+                            }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                text: themeCard.modelData.name
+                                color: Theme.text
+                                font.pixelSize: 13
+                                font.weight: Font.DemiBold
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                            }
+                            Tag {
+                                visible: Theme.selectedIndex === themeCard.index
+                                text: "Active"
+                                tone: Theme.accent
+                            }
+                        }
+                        Text {
+                            text: themeCard.modelData.description
+                            color: Theme.muted
+                            font.pixelSize: 10
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            maximumLineCount: 2
+                            elide: Text.ElideRight
+                        }
                     }
-                }
-                Tag {
-                    text: "Always dark"
-                    tone: Theme.accent
                 }
             }
         }
+
         Text {
             text: "PREFERENCES"
             color: Theme.subtle
             font.pixelSize: 10
             font.letterSpacing: 1.1
+            Layout.topMargin: 4
         }
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 230
+            implicitHeight: 226
             radius: 10
             color: Theme.panel
             border.color: Theme.line
             ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: 24
-                spacing: 24
+                spacing: 20
                 Repeater {
                     model: [
                         {
@@ -178,7 +208,7 @@ Item {
             Layout.fillHeight: true
         }
         Text {
-            text: "dbToolKit 0.1.0  ·  Designed for local development"
+            text: "Theme changes are preview-only until preferences are stored with the application data."
             color: Theme.subtle
             font.pixelSize: 11
         }

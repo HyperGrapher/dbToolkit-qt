@@ -5,17 +5,28 @@ import QtQuick.Layouts
 
 Item {
     id: page
-    property string databaseName: "atlas_dev"
+    property int selectedDatabaseIndex: -1
+    readonly property bool hasSelection: selectedDatabaseIndex >= 0
+    readonly property string databaseName: hasSelection ? PreviewData.databases[selectedDatabaseIndex].name : ""
+    readonly property string serviceName: hasSelection ? (selectedDatabaseIndex === 1 ? "MySQL" : "PostgreSQL") : ""
     property string tableName: "users"
     property int selectedRow: 1
     property int selectedColumn: 1
     property bool structure: false
     readonly property var columns: ["id", "name", "email", "role", "status", "created_at"]
     readonly property var columnWidths: [55, 165, 225, 95, 100, 170]
-    readonly property var displayedRows: tableName === "users" ? PreviewData.rows.filter(r => String(r.name + r.email + r.role).toLowerCase().includes(rowSearch.text.toLowerCase())) : []
+    readonly property var displayedRows: hasSelection && tableName === "users" ? PreviewData.rows.filter(r => String(r.name + r.email + r.role).toLowerCase().includes(rowSearch.text.toLowerCase())) : []
     readonly property var selectedRecord: displayedRows[Math.min(selectedRow, displayedRows.length - 1)]
     readonly property string selectedValue: selectedRecord ? String([selectedRecord.id, selectedRecord.name, selectedRecord.email, selectedRecord.role, selectedRecord.status, selectedRecord.created][selectedColumn]) : "No cell selected"
     signal actionRequested(string action)
+
+    function selectDatabase(index) {
+        selectedDatabaseIndex = index;
+        tableName = "users";
+        selectedRow = 0;
+        selectedColumn = 0;
+        structure = false;
+    }
     ColumnLayout {
         anchors.fill: parent
         spacing: 20
@@ -30,7 +41,7 @@ Item {
                     font.letterSpacing: -0.6
                 }
                 Text {
-                    text: "A closer look at " + page.databaseName + "."
+                    text: page.hasSelection ? "A closer look at " + page.databaseName + "." : "Choose a database before opening its tables."
                     color: Theme.muted
                     font.pixelSize: 12
                 }
@@ -38,9 +49,17 @@ Item {
             Item {
                 Layout.fillWidth: true
             }
+            ComboBox {
+                id: databaseSelector
+                model: ["Choose a database…"].concat(PreviewData.databases.slice(0, 4).map(database => database.name))
+                currentIndex: page.selectedDatabaseIndex + 1
+                implicitWidth: 190
+                implicitHeight: 36
+                onActivated: page.selectDatabase(currentIndex - 1)
+            }
             Tag {
-                text: "Sample data"
-                tone: Theme.accent
+                text: page.hasSelection ? "Sample data" : "Selection required"
+                tone: page.hasSelection ? Theme.accent : Theme.amber
                 dot: true
             }
             ActionButton {
@@ -49,7 +68,57 @@ Item {
                 onClicked: page.actionRequested("Export database")
             }
         }
+        Rectangle {
+            visible: !page.hasSelection
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            radius: 10
+            color: Theme.panel
+            border.color: Theme.line
+            ColumnLayout {
+                anchors.centerIn: parent
+                width: Math.min(360, parent.width - 48)
+                spacing: 12
+                Rectangle {
+                    Layout.alignment: Qt.AlignHCenter
+                    implicitWidth: 52
+                    implicitHeight: 52
+                    radius: 14
+                    color: Theme.selected
+                    Glyph {
+                        anchors.centerIn: parent
+                        name: "database"
+                        ink: Theme.accent
+                        implicitWidth: 28
+                        implicitHeight: 28
+                    }
+                }
+                Text {
+                    text: "Choose a database to explore"
+                    color: Theme.text
+                    font.pixelSize: 18
+                    font.weight: Font.DemiBold
+                    Layout.alignment: Qt.AlignHCenter
+                }
+                Text {
+                    text: "Tables, sample rows, and structure appear only after you choose an explicit target."
+                    color: Theme.muted
+                    font.pixelSize: 12
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                    Layout.fillWidth: true
+                }
+                ActionButton {
+                    text: "Choose atlas_dev"
+                    glyph: "database"
+                    primary: true
+                    Layout.alignment: Qt.AlignHCenter
+                    onClicked: page.selectDatabase(0)
+                }
+            }
+        }
         RowLayout {
+            visible: page.hasSelection
             Layout.fillWidth: true
             Layout.fillHeight: true
             spacing: 16

@@ -9,6 +9,8 @@ Popup {
     property string databaseName: "atlas_dev"
     property string cellValue: "Jamie Chen"
     property int selectedEngine: 0
+    property bool showPassword: false
+    property bool importToNew: false
     signal actionRequested(string action)
     signal previewSubmitted(string action)
     readonly property bool destructive: ["Delete database", "Recreate database", "Empty database", "Delete row", "Empty table", "Stop service"].includes(kind)
@@ -49,6 +51,12 @@ Popup {
             label: "USERNAME",
             value: selectedEngine === 0 ? "postgres" : "root",
             placeholder: "Username"
+        },
+        {
+            label: "ADMINISTRATOR PASSWORD",
+            value: "",
+            placeholder: "Enter administrator password",
+            password: true
         }
     ] : kind === "Export database" ? [
         {
@@ -60,6 +68,17 @@ Popup {
             label: "FILE NAME",
             value: databaseName + ".sql",
             placeholder: "File name"
+        }
+    ] : kind === "Import SQL" ? [
+        {
+            label: "SQL FILE",
+            value: "",
+            placeholder: "Choose a .sql file…"
+        },
+        {
+            label: importToNew ? "NEW DATABASE NAME" : "TARGET DATABASE",
+            value: importToNew ? "" : databaseName,
+            placeholder: importToNew ? "e.g. restored_project" : databaseName
         }
     ] : kind === "Edit cell" ? [
         {
@@ -104,7 +123,11 @@ Popup {
     modal: true
     focus: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-    onOpened: selectedEngine = 0
+    onOpened: {
+        selectedEngine = 0;
+        showPassword = false;
+        importToNew = false;
+    }
     background: Rectangle {
         color: "#1a1f28"
         radius: 14
@@ -138,7 +161,7 @@ Popup {
                     color: dialog.destructive ? "#3e2831" : "#263853"
                     Glyph {
                         anchors.centerIn: parent
-                        name: dialog.destructive ? "info" : dialog.kind === "Export database" ? "download" : "database"
+                        name: dialog.destructive ? "info" : dialog.kind === "Export database" ? "download" : dialog.kind === "Import SQL" ? "upload" : "database"
                         ink: dialog.destructive ? Theme.red : Theme.accent
                         implicitWidth: 22
                         implicitHeight: 22
@@ -161,7 +184,7 @@ Popup {
                 font.weight: Font.DemiBold
             }
             Text {
-                text: dialog.destructive ? "This action would affect “" + dialog.databaseName + "”. " + (dialog.kind === "Recreate database" ? "All tables and data would be removed and a fresh database created." : dialog.kind === "Empty database" || dialog.kind === "Empty table" ? "All rows would be removed; table definitions would remain." : dialog.kind === "Stop service" ? "Connections to this service would be interrupted." : "Review the target carefully before continuing.") : dialog.kind === "New database" ? "A fresh space for your next project." : dialog.kind === "Export database" ? "Keep a portable copy of your schema and data." : dialog.menuMode ? "Manage “" + dialog.databaseName + "”." : dialog.kind === "Edit cell" ? "Review your change before saving it." : dialog.kind === "Database details" ? "Connection and project information for “" + dialog.databaseName + "”." : "Set up the details for your local workspace."
+                text: dialog.destructive ? "This action would affect “" + dialog.databaseName + "”. " + (dialog.kind === "Recreate database" ? "All tables and data would be removed and a fresh database created." : dialog.kind === "Empty database" || dialog.kind === "Empty table" ? "All rows would be removed; table definitions would remain." : dialog.kind === "Stop service" ? "Connections to this service would be interrupted." : "Review the target carefully before continuing.") : dialog.kind === "New database" ? "A fresh space for your next project." : dialog.kind === "Export database" ? "Keep a portable copy of your schema and data." : dialog.kind === "Import SQL" ? "The selected target stays in control. Names inside the SQL file will not redirect the import." : dialog.menuMode ? "Manage “" + dialog.databaseName + "”." : dialog.kind === "Edit cell" ? "Review your change before saving it." : dialog.kind === "Database details" ? "Connection and project information for “" + dialog.databaseName + "”." : "Set up the details for your local workspace."
                 color: Theme.muted
                 font.pixelSize: 12
                 lineHeight: 1.4
@@ -183,6 +206,22 @@ Popup {
                     }
                 }
             }
+            RowLayout {
+                visible: dialog.kind === "Import SQL"
+                spacing: 8
+                ActionButton {
+                    text: "Merge into existing"
+                    primary: !dialog.importToNew
+                    Layout.fillWidth: true
+                    onClicked: dialog.importToNew = false
+                }
+                ActionButton {
+                    text: "Create new database"
+                    primary: dialog.importToNew
+                    Layout.fillWidth: true
+                    onClicked: dialog.importToNew = true
+                }
+            }
             Repeater {
                 model: dialog.fields
                 delegate: ColumnLayout {
@@ -196,21 +235,34 @@ Popup {
                         font.pixelSize: 9
                         font.letterSpacing: 0.7
                     }
-                    TextField {
-                        id: input
+                    RowLayout {
                         Layout.fillWidth: true
-                        implicitHeight: 40
-                        text: fieldRow.modelData.value
-                        placeholderText: fieldRow.modelData.placeholder
-                        color: Theme.text
-                        placeholderTextColor: Theme.subtle
-                        font.pixelSize: 12
-                        leftPadding: 12
-                        selectionColor: Theme.blue
-                        background: Rectangle {
-                            color: Theme.background
-                            radius: 6
-                            border.color: input.activeFocus ? Theme.accent : Theme.line
+                        spacing: 8
+                        TextField {
+                            id: input
+                            Layout.fillWidth: true
+                            implicitHeight: 40
+                            text: fieldRow.modelData.value
+                            placeholderText: fieldRow.modelData.placeholder
+                            echoMode: fieldRow.modelData.password && !dialog.showPassword ? TextInput.Password : TextInput.Normal
+                            color: Theme.text
+                            placeholderTextColor: Theme.subtle
+                            font.pixelSize: 12
+                            leftPadding: 12
+                            selectionColor: Theme.blue
+                            background: Rectangle {
+                                color: Theme.background
+                                radius: 6
+                                border.color: input.activeFocus ? Theme.accent : Theme.line
+                            }
+                        }
+                        ActionButton {
+                            visible: fieldRow.modelData.password === true
+                            text: dialog.showPassword ? "Hide" : "Show"
+                            glyph: "eye"
+                            quiet: true
+                            implicitHeight: 40
+                            onClicked: dialog.showPassword = !dialog.showPassword
                         }
                     }
                 }
@@ -225,8 +277,8 @@ Popup {
                 }
             }
             Tag {
-                visible: dialog.kind === "Export database"
-                text: "SQL · Schema and data"
+                visible: dialog.kind === "Export database" || dialog.kind === "Import SQL"
+                text: dialog.kind === "Import SQL" ? "Plain SQL · Target selected in dbToolKit" : "SQL · Schema and data"
                 tone: Theme.accent
             }
             Repeater {
@@ -277,7 +329,7 @@ Popup {
                     onClicked: dialog.close()
                 }
                 ActionButton {
-                    text: dialog.destructive ? "Confirm preview" : dialog.kind === "New database" ? "Create database" : dialog.kind === "Export database" ? "Export SQL" : "Done"
+                    text: dialog.destructive ? "Confirm preview" : dialog.kind === "New database" ? "Create database" : dialog.kind === "Export database" ? "Export SQL" : dialog.kind === "Import SQL" ? (dialog.importToNew ? "Create and import" : "Merge SQL") : "Done"
                     primary: !dialog.destructive
                     danger: dialog.destructive
                     onClicked: {

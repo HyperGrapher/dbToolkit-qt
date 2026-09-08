@@ -22,9 +22,9 @@ Button {
     ToolTip.delay: 450
     background: Rectangle {
         radius: 7
-        color: control.primary ? (control.down ? "#3a68d1" : control.hovered ? "#5b8efa" : Theme.blue) : control.hovered ? Theme.hover : control.quiet ? "transparent" : Theme.raised
+        color: control.primary ? (control.down ? Theme.selected : control.hovered ? Theme.accent : Theme.blue) : control.hovered ? Theme.hover : control.quiet ? "transparent" : Theme.raised
         border.width: control.visualFocus ? 2 : 1
-        border.color: control.visualFocus ? Theme.accent : control.primary ? "#6694f8" : control.quiet ? "transparent" : Theme.line
+        border.color: control.visualFocus ? Theme.accent : control.primary ? Theme.accent : control.quiet ? "transparent" : Theme.line
         Behavior on color {
             ColorAnimation {
                 duration: 110

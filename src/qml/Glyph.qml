@@ -144,6 +144,19 @@ Canvas {
             line([12, 2, 21, 6, 20, 15, 12, 22, 4, 15, 3, 6, 12, 2]);
             line([8, 12, 11, 15, 16, 9]);
             break;
+        case "eye":
+            c.beginPath();
+            c.moveTo(2, 12);
+            c.bezierCurveTo(6, 5, 18, 5, 22, 12);
+            c.bezierCurveTo(18, 19, 6, 19, 2, 12);
+            c.stroke();
+            circle(12, 12, 2.5);
+            break;
+        case "upload":
+            line([12, 21, 12, 7]);
+            line([7, 12, 12, 7, 17, 12]);
+            line([4, 4, 4, 3, 20, 3, 20, 4]);
+            break;
         default:
             circle(12, 12, 8);
             line([12, 10, 12, 16]);
