@@ -16,6 +16,7 @@ Paths are relative to `dbToolkit-qt/`.
 - Keep stable step IDs. Mark `[x]` only after the stated acceptance checks pass.
 - Leave partial steps unchecked, with completed substeps and pending checks listed.
 - Update Handoff after every session with work, evidence, blockers, and next action.
+- Finish the edits for each focused slice before running sanity checks, builds, tests, and runtime smoke checks together at the end.
 - Never count unavailable or unrun tests as passing.
 
 ## Before the first build
