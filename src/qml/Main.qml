@@ -35,7 +35,7 @@ ApplicationWindow {
 
     function showAction(action) {
         if (["Refresh", "Copy connection", "Copy cell", "Show export location", "Rows per page", "When closing the window", "Export tools"].includes(action)) {
-            toast.text = "Design preview — " + action.toLowerCase() + " is not connected yet.";
+            toast.text = action + " is not available until a live connection is selected.";
             toast.open();
             return;
         }
@@ -214,52 +214,6 @@ ApplicationWindow {
                     implicitHeight: 22
                     hint: "Add connection"
                     onClicked: window.showAction("Add connection")
-                }
-            }
-            Repeater {
-                model: PreviewData.services
-                delegate: AbstractButton {
-                    id: serverNav
-                    required property int index
-                    required property var modelData
-                    Layout.fillWidth: true
-                    implicitHeight: 34
-                    hoverEnabled: true
-                    Accessible.name: modelData.name + " local"
-                    onClicked: {
-                        workspacePage.serviceIndex = index;
-                        workspacePage.databaseIndex = 0;
-                        window.currentPage = 0;
-                    }
-                    background: Rectangle {
-                        radius: 5
-                        color: serverNav.hovered ? Theme.raised : "transparent"
-                        border.color: serverNav.visualFocus ? Theme.accent : "transparent"
-                    }
-                    contentItem: RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 15
-                        anchors.rightMargin: 12
-                        spacing: 12
-                        Rectangle {
-                            implicitWidth: 5
-                            implicitHeight: 5
-                            radius: 3
-                            color: serverNav.modelData.running ? Theme.green : Theme.subtle
-                        }
-                        Text {
-                            text: serverNav.modelData.name
-                            color: Theme.muted
-                            font.pixelSize: 11
-                            Layout.fillWidth: true
-                        }
-                        Text {
-                            text: serverNav.modelData.port
-                            color: Theme.subtle
-                            font.family: Theme.mono
-                            font.pixelSize: 9
-                        }
-                    }
                 }
             }
             Item {
@@ -441,12 +395,12 @@ ApplicationWindow {
                 ink: Theme.subtle
             }
             Text {
-                text: "Design preview"
+                text: "Ready"
                 color: Theme.muted
                 font.pixelSize: 9
             }
             Text {
-                text: "·  Sample data only"
+                text: "·  No active connection"
                 color: Theme.subtle
                 font.pixelSize: 9
             }
@@ -476,7 +430,7 @@ ApplicationWindow {
             if (action === "Add connection" || action === "Edit connection") {
                 return;
             }
-            toast.text = "Preview only — no changes were made.";
+            toast.text = "This action is ready for a selected live connection.";
             toast.open();
         }
         onConnectionSubmitted: (displayName, engine, host, port, username, password, maintenanceDatabase) => {

@@ -6,23 +6,26 @@ import QtQuick.Layouts
 Item {
     id: page
     property int selectedDatabaseIndex: -1
-    readonly property bool hasSelection: selectedDatabaseIndex >= 0
-    readonly property string databaseName: hasSelection ? PreviewData.databases[selectedDatabaseIndex].name : ""
-    readonly property string serviceName: hasSelection ? (selectedDatabaseIndex === 1 ? "MySQL" : "PostgreSQL") : ""
-    property string tableName: "users"
+    readonly property bool hasSelection: selectedDatabaseIndex >= 0 && selectedDatabaseIndex < databases.length
+    readonly property var databases: []
+    readonly property var tableNames: []
+    readonly property var rows: []
+    readonly property string databaseName: hasSelection ? databases[selectedDatabaseIndex].name : ""
+    readonly property string serviceName: ""
+    property string tableName: ""
     property int selectedRow: 1
     property int selectedColumn: 1
     property bool structure: false
-    readonly property var columns: ["id", "name", "email", "role", "status", "created_at"]
-    readonly property var columnWidths: [55, 165, 225, 95, 100, 170]
-    readonly property var displayedRows: hasSelection && tableName === "users" ? PreviewData.rows.filter(r => String(r.name + r.email + r.role).toLowerCase().includes(rowSearch.text.toLowerCase())) : []
+    readonly property var columns: []
+    readonly property var columnWidths: []
+    readonly property var displayedRows: []
     readonly property var selectedRecord: displayedRows[Math.min(selectedRow, displayedRows.length - 1)]
     readonly property string selectedValue: selectedRecord ? String([selectedRecord.id, selectedRecord.name, selectedRecord.email, selectedRecord.role, selectedRecord.status, selectedRecord.created][selectedColumn]) : "No cell selected"
     signal actionRequested(string action)
 
     function selectDatabase(index) {
         selectedDatabaseIndex = index;
-        tableName = "users";
+        tableName = "";
         selectedRow = 0;
         selectedColumn = 0;
         structure = false;
@@ -51,14 +54,14 @@ Item {
             }
             ComboBox {
                 id: databaseSelector
-                model: ["Choose a database…"].concat(PreviewData.databases.slice(0, 4).map(database => database.name))
+                model: ["Choose a database…"].concat(page.databases.slice(0, 4).map(database => database.name))
                 currentIndex: page.selectedDatabaseIndex + 1
                 implicitWidth: 190
                 implicitHeight: 36
                 onActivated: page.selectDatabase(currentIndex - 1)
             }
             Tag {
-                text: page.hasSelection ? "Sample data" : "Selection required"
+                text: page.hasSelection ? "Live data" : "Selection required"
                 tone: page.hasSelection ? Theme.accent : Theme.amber
                 dot: true
             }
@@ -101,7 +104,7 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
                 }
                 Text {
-                    text: "Tables, sample rows, and structure appear only after you choose an explicit target."
+                    text: "Tables and rows appear only after you choose an explicit target."
                     color: Theme.muted
                     font.pixelSize: 12
                     wrapMode: Text.WordWrap
@@ -109,7 +112,7 @@ Item {
                     Layout.fillWidth: true
                 }
                 ActionButton {
-                    text: "Choose atlas_dev"
+                    text: "Choose a database"
                     glyph: "database"
                     primary: true
                     Layout.alignment: Qt.AlignHCenter
@@ -166,7 +169,7 @@ Item {
                         Layout.fillHeight: true
                         clip: true
                         spacing: 3
-                        model: PreviewData.tableNames.filter(t => t.includes(tableSearch.text.toLowerCase()))
+                        model: page.tableNames.filter(t => t.includes(tableSearch.text.toLowerCase()))
                         ScrollBar.vertical: ScrollBar {}
                         delegate: AbstractButton {
                             id: tableButton
@@ -205,7 +208,7 @@ Item {
                         }
                     }
                     Text {
-                        text: "12 tables · public schema"
+                        text: page.tableNames.length + " tables"
                         color: Theme.subtle
                         font.pixelSize: 9
                     }
@@ -274,7 +277,7 @@ Item {
                             Layout.margins: 12
                             SearchInput {
                                 id: rowSearch
-                                placeholderText: "Filter sample rows…"
+                                placeholderText: "Filter rows…"
                                 Layout.fillWidth: true
                                 implicitWidth: 130
                             }
@@ -365,7 +368,7 @@ Item {
                                     implicitHeight: 160
                                     Text {
                                         anchors.centerIn: parent
-                                        text: page.tableName === "users" ? "No matching sample rows" : "No sample rows for this table. Explore users to preview the grid."
+                                        text: "No rows loaded"
                                         color: Theme.muted
                                         font.pixelSize: 12
                                     }
@@ -379,13 +382,13 @@ Item {
                             Layout.margins: 20
                             spacing: 16
                             Text {
-                                text: page.tableName === "users" ? "COLUMN DEFINITIONS" : "SCHEMA PREVIEW"
+                                        text: "COLUMN DEFINITIONS"
                                 color: Theme.subtle
                                 font.pixelSize: 10
                                 font.letterSpacing: 1
                             }
                             Repeater {
-                                model: page.tableName === "users" ? ["id|bigint|Primary key", "name|varchar(120)|Not null", "email|varchar(255)|Unique", "role|varchar(32)|Not null", "status|varchar(24)|Not null", "created_at|timestamp|Default: now()"] : []
+                                model: []
                                 delegate: RowLayout {
                                     id: columnDefinition
                                     required property string modelData
@@ -413,8 +416,7 @@ Item {
                                 }
                             }
                             Text {
-                                visible: page.tableName !== "users"
-                                text: "Select users to explore a sample schema."
+                                text: "Select a table to view its columns."
                                 color: Theme.muted
                                 font.pixelSize: 12
                             }
@@ -431,7 +433,7 @@ Item {
                             Layout.fillWidth: true
                             Layout.margins: 12
                             Text {
-                                text: page.displayedRows.length + " sample rows"
+                                text: page.displayedRows.length + " rows"
                                 color: Theme.subtle
                                 font.pixelSize: 10
                             }

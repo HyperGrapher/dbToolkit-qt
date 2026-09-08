@@ -91,7 +91,7 @@ Item {
 
         RowLayout {
             Text {
-                text: "Recent exports"
+                text: "Export history"
                 color: Theme.text
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
@@ -100,7 +100,7 @@ Item {
                 Layout.fillWidth: true
             }
             Tag {
-                text: "Illustrative history"
+                text: "No exports yet"
                 tone: Theme.muted
             }
         }
@@ -115,23 +115,7 @@ Item {
                 anchors.margins: 20
                 spacing: 0
                 Repeater {
-                    model: [
-                        {
-                            name: "atlas_dev",
-                            date: "Today, 10:42",
-                            size: "18.6 MB"
-                        },
-                        {
-                            name: "storefront",
-                            date: "Yesterday, 16:08",
-                            size: "12.3 MB"
-                        },
-                        {
-                            name: "analytics_local",
-                            date: "Sep 6, 09:30",
-                            size: "42.1 MB"
-                        }
-                    ]
+                    model: []
                     delegate: RowLayout {
                         id: exportRow
                         required property var modelData
@@ -191,7 +175,7 @@ Item {
             Layout.fillHeight: true
         }
         Text {
-            text: "Sample export history. No SQL files have been created or imported."
+            text: "No SQL files have been created or imported."
             color: Theme.subtle
             font.pixelSize: 11
         }

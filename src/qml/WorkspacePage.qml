@@ -7,9 +7,12 @@ Item {
     id: page
     property int serviceIndex: 0
     property int databaseIndex: 0
-    readonly property var service: PreviewData.services[serviceIndex]
-    readonly property var database: PreviewData.databases[databaseIndex]
-    readonly property bool offline: !service.running
+    readonly property var services: []
+    readonly property var databases: []
+    readonly property var service: services[serviceIndex] || null
+    readonly property var database: databases[databaseIndex] || null
+    readonly property bool hasSelection: service !== null && database !== null
+    readonly property bool offline: service === null || !service.running
     property bool managedOnly: false
     signal browseRequested
     signal actionRequested(string action)
@@ -47,7 +50,7 @@ Item {
         RowLayout {
             spacing: 14
             Repeater {
-                model: PreviewData.services
+                model: page.services
                 delegate: ServiceCard {
                     required property int index
                     required property var modelData
@@ -71,7 +74,7 @@ Item {
                 implicitHeight: 18
             }
             Text {
-                text: page.service.name
+                text: page.service ? page.service.name : "No connection selected"
                 color: Theme.text
                 font.pixelSize: 15
                 font.weight: Font.DemiBold
@@ -87,12 +90,12 @@ Item {
                 font.pixelSize: 15
             }
             Tag {
-                text: String(page.service.databases)
+                text: page.service ? String(page.service.databases) : "0"
                 tone: Theme.muted
             }
             Tag {
                 visible: page.offline
-                text: "Cached · 18 min ago"
+                text: "Offline"
                 tone: Theme.amber
                 dot: true
             }
@@ -100,7 +103,7 @@ Item {
                 Layout.fillWidth: true
             }
             Text {
-                text: page.offline ? "Last refreshed 18 min ago" : "Updated just now"
+                text: page.offline ? "No live service selected" : "Updated"
                 color: page.offline ? Theme.amber : Theme.subtle
                 font.pixelSize: 10
             }
@@ -182,7 +185,7 @@ Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
-                        model: PreviewData.databases.slice(0, page.service.databases).filter(d => (!page.managedOnly || d.managed) && d.name.toLowerCase().includes(search.text.toLowerCase()))
+                        model: page.service ? page.databases.slice(0, page.service.databases).filter(d => (!page.managedOnly || d.managed) && d.name.toLowerCase().includes(search.text.toLowerCase())) : []
                         ScrollBar.vertical: ScrollBar {}
                         delegate: AbstractButton {
                             id: databaseRow
@@ -192,7 +195,7 @@ Item {
                             hoverEnabled: true
                             readonly property bool selected: modelData.name === page.database.name
                             Accessible.name: modelData.name
-                            onClicked: page.databaseIndex = PreviewData.databases.findIndex(d => d.name === modelData.name)
+                            onClicked: page.databaseIndex = page.databases.findIndex(d => d.name === modelData.name)
                             onDoubleClicked: page.browseRequested()
                             background: Rectangle {
                                 color: databaseRow.selected ? "#202d43" : databaseRow.hovered ? Theme.raised : "transparent"
@@ -311,20 +314,23 @@ Item {
                     }
                 }
             }
-            DatabaseInspector {
-                visible: page.width >= 1010
+            Loader {
+                visible: page.width >= 1010 && page.hasSelection
+                active: page.hasSelection
                 Layout.preferredWidth: 280
                 Layout.fillHeight: true
-                database: page.database
-                service: page.service
-                onBrowseRequested: page.browseRequested()
-                onActionRequested: action => page.actionRequested(action)
+                sourceComponent: DatabaseInspector {
+                    database: page.database
+                    service: page.service
+                    onBrowseRequested: page.browseRequested()
+                    onActionRequested: action => page.actionRequested(action)
+                }
             }
         }
         RowLayout {
             visible: page.width < 1010
             Text {
-                text: page.database.name
+                text: page.database ? page.database.name : "No database selected"
                 color: Theme.accent
                 font.pixelSize: 12
             }

@@ -6,7 +6,7 @@ import QtQuick.Layouts
 Popup {
     id: dialog
     property string kind: "New database"
-    property string databaseName: "atlas_dev"
+    property string databaseName: ""
     property string cellValue: "Jamie Chen"
     property int selectedEngine: 0
     property bool showPassword: false
@@ -193,7 +193,7 @@ Popup {
                 TextField {
                     id: connectionNameInput
                     Layout.fillWidth: true
-                    text: dialog.kind === "Edit connection" ? "PostgreSQL local" : ""
+                    text: ""
                     placeholderText: "e.g. PostgreSQL local"
                     color: Theme.text
                     placeholderTextColor: Theme.subtle
@@ -365,7 +365,7 @@ Popup {
                     ink: Theme.subtle
                 }
                 Text {
-                    text: "Design preview · no changes will be made"
+                    text: "Review the selected action before continuing"
                     color: Theme.subtle
                     font.pixelSize: 10
                     Layout.fillWidth: true

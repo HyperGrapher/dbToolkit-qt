@@ -54,13 +54,13 @@ Item {
                     ink: Theme.green
                 }
                 Text {
-                    text: "3 local services"
+                    text: page.hasLiveConnections ? "Saved connections" : "No saved connections"
                     color: Theme.text
                     font.pixelSize: 12
                     font.weight: Font.Medium
                 }
                 Text {
-                    text: "·  2 running, 1 cached offline"
+                    text: page.hasLiveConnections ? "Add a connection to get started" : "Add a connection to begin"
                     color: Theme.muted
                     font.pixelSize: 12
                 }
@@ -68,7 +68,7 @@ Item {
                     Layout.fillWidth: true
                 }
                 Tag {
-                    text: "Preview data"
+                    text: "Live session"
                     tone: Theme.green
                 }
             }
@@ -79,79 +79,6 @@ Item {
             color: Theme.subtle
             font.pixelSize: 10
             font.letterSpacing: 1.1
-        }
-        Repeater {
-            visible: !page.hasLiveConnections
-            model: PreviewData.services
-            delegate: Rectangle {
-                id: connectionCard
-                visible: !page.hasLiveConnections
-                required property int index
-                required property var modelData
-                Layout.fillWidth: true
-                implicitHeight: 114
-                radius: 10
-                color: Theme.panel
-                border.color: Theme.line
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 22
-                    spacing: 16
-                    Rectangle {
-                        implicitWidth: 48
-                        implicitHeight: 48
-                        radius: 12
-                        color: Theme.raised
-                        Glyph {
-                            anchors.centerIn: parent
-                            name: "database"
-                            implicitWidth: 26
-                            implicitHeight: 26
-                            ink: connectionCard.modelData.color
-                        }
-                    }
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 7
-                        Text {
-                            text: connectionCard.modelData.name + " local"
-                            color: Theme.text
-                            font.pixelSize: 16
-                            font.weight: Font.DemiBold
-                        }
-                        Text {
-                            text: "localhost:" + connectionCard.modelData.port + "   /   " + (connectionCard.index === 0 ? "postgres" : "root")
-                            color: Theme.muted
-                            font.family: Theme.mono
-                            font.pixelSize: 11
-                        }
-                        Text {
-                            text: connectionCard.modelData.running ? connectionCard.modelData.databases + " live databases" : connectionCard.modelData.databases + " cached databases · refreshed 18 min ago"
-                            color: Theme.subtle
-                            font.pixelSize: 10
-                        }
-                    }
-                    Tag {
-                        Layout.preferredWidth: 94
-                        text: connectionCard.modelData.running ? "Connected" : "Cached offline"
-                        dot: true
-                        tone: connectionCard.modelData.running ? Theme.green : Theme.amber
-                    }
-                    ActionButton {
-                        glyph: "settings"
-                        hint: "Edit connection"
-                        quiet: true
-                        Layout.preferredWidth: 38
-                        onClicked: page.actionRequested("Edit connection")
-                    }
-                    ActionButton {
-                        text: "Open"
-                        glyph: "arrow"
-                        Layout.preferredWidth: 86
-                        onClicked: page.openRequested(connectionCard.index)
-                    }
-                }
-            }
         }
         Repeater {
             visible: page.hasLiveConnections
@@ -246,7 +173,7 @@ Item {
                 ink: Theme.subtle
             }
             Text {
-                text: "Passwords are requested during first connection setup. This preview never stores or sends them."
+                text: "Passwords remain in memory for the current session until encrypted vault storage is enabled."
                 color: Theme.subtle
                 font.pixelSize: 11
                 wrapMode: Text.WordWrap

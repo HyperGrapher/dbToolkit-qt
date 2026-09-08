@@ -65,7 +65,6 @@ endif()
 set(app_qml_files
     src/qml/Main.qml
     src/qml/Theme.qml
-    src/qml/PreviewData.qml
     src/qml/Glyph.qml
     src/qml/ActionButton.qml
     src/qml/Tag.qml
@@ -79,7 +78,7 @@ set(app_qml_files
     src/qml/SettingsPage.qml
     src/qml/PreviewDialog.qml
 )
-set_source_files_properties(src/qml/Theme.qml src/qml/PreviewData.qml
+set_source_files_properties(src/qml/Theme.qml
     PROPERTIES QT_QML_SINGLETON_TYPE TRUE
 )
 # Keep types at the module root even though sources live under src/qml.
