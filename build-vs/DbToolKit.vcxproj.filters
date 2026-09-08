@@ -1,0 +1,251 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\DbToolKit_autogen\mocs_compilation_Debug.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\dbtoolkit_qmltyperegistrations.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.qt\rcc\qrc_qmake_DbToolKit.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_qmlcache_loader.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\Main_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\Theme_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\PreviewData_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\Glyph_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\ActionButton_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\Tag_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\SearchInput_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\ServiceCard_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\DatabaseInspector_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\WorkspacePage_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\ConnectionsPage_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\ViewerPage_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\ExportsPage_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\SettingsPage_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.rcc\qmlcache\DbToolKit_src\qml\PreviewDialog_qml.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.qt\rcc\qrc_DbToolKit_raw_qml_0.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\DbToolKit_autogen\mocs_compilation_Release.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\DbToolKit_autogen\mocs_compilation_MinSizeRel.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\DbToolKit_autogen\mocs_compilation_RelWithDebInfo.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.qt\rcc\qmake_DbToolKit.qrc">
+      <Filter>Source Files\Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\DbToolKit\qmldir">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\.qt\rcc\DbToolKit_raw_qml_0.qrc">
+      <Filter>Source Files\Generated</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\c0d493f9360ccf04b4791e2241e4b481\DbToolKit_json_file_list.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\c0d493f9360ccf04b4791e2241e4b481\qt6dbtoolkit_metatypes.json.gen.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\c0d493f9360ccf04b4791e2241e4b481\qt6dbtoolkit_metatypes.json.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\f9966732847f782453ea39ebb07371b4\dbtoolkit_qmltyperegistrations.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\2d16ae1eeac5e7b38c747928827db80b\qrc_qmake_DbToolKit.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\4ff4b2fc701bfa1c96059af3b0ade5bc\DbToolKit_qmlcache_loader.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\Main_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\Theme_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\PreviewData_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\Glyph_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\ActionButton_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\Tag_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\SearchInput_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\ServiceCard_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\DatabaseInspector_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\WorkspacePage_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\ConnectionsPage_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\ViewerPage_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\ExportsPage_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\SettingsPage_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\PreviewDialog_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\2d16ae1eeac5e7b38c747928827db80b\qrc_DbToolKit_raw_qml_0.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\meta_types\qt6dbtoolkit_metatypes.json.gen">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\Main.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\Theme.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\PreviewData.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\Glyph.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\ActionButton.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\Tag.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\SearchInput.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\ServiceCard.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\DatabaseInspector.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\WorkspacePage.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\ConnectionsPage.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\ViewerPage.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\ExportsPage.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\SettingsPage.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\src\qml\PreviewDialog.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\timestamp_Debug" />
+    <None Include="C:\Qt\6.11.1\mingw_64\metatypes\qt6core_metatypes.json">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Qt\6.11.1\mingw_64\metatypes\qt6qml_metatypes.json">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Qt\6.11.1\mingw_64\metatypes\qt6network_metatypes.json">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Qt\6.11.1\mingw_64\metatypes\qt6quick_metatypes.json">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Qt\6.11.1\mingw_64\metatypes\qt6gui_metatypes.json">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Qt\6.11.1\mingw_64\metatypes\qt6opengl_metatypes.json">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Qt\6.11.1\mingw_64\metatypes\qt6quickcontrols2_metatypes.json">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\timestamp_Release" />
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\timestamp_MinSizeRel" />
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\timestamp_RelWithDebInfo" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\resources\app.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{825F0946-793F-368C-893F-2E15AA120322}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{A66F6A3F-A2DB-34ED-B1FF-2C4B264B6226}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{031E5A0D-C236-36FD-BF7C-7534D73F2F67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Generated">
+      <UniqueIdentifier>{E2CFFA2B-2A4B-3C39-AA1D-4E113639BE18}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

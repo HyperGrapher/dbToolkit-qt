@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="/qt/qml/DbToolKit">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/build-vs/DbToolKit</file>
+
+  </qresource>
+</RCC>

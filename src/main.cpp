@@ -1,6 +1,9 @@
 #include <QGuiApplication>
+#include <QQmlContext>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
+
+#include "controllers/ApplicationController.h"
 
 int main(int argc, char *argv[])
 {
@@ -11,6 +14,8 @@ int main(int argc, char *argv[])
     QQuickStyle::setStyle("Basic");
 
     QQmlApplicationEngine engine;
+    dbtoolkit::ApplicationController applicationController;
+    engine.rootContext()->setContextProperty("applicationController", &applicationController);
 
     // Exit application if QML fails to load
     QObject::connect(

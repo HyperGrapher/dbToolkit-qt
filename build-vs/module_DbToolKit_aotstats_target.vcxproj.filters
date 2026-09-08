@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\ActionButton_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\ConnectionsPage_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\DatabaseInspector_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\ExportsPage_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\Glyph_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\Main_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\PreviewData_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\PreviewDialog_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\SearchInput_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\ServiceCard_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\SettingsPage_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\Tag_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\Theme_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\ViewerPage_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\22154a0c5951130e5a14af7ba3081768\WorkspacePage_qml.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\4ff4b2fc701bfa1c96059af3b0ade5bc\module_DbToolKit.aotstats.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\99f2efdab5bd464d1a8a882a26529cfc\module_DbToolKit_aotstats_target.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\module_DbToolKit_aotstats_target" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{825F0946-793F-368C-893F-2E15AA120322}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

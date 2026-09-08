@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick QuickControls2)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Quick QuickControls2)
 if(NOT DBTOOLKIT_UI_PREVIEW)
     find_package(nlohmann_json CONFIG REQUIRED)
     find_package(spdlog CONFIG REQUIRED)
@@ -22,6 +22,29 @@ if(NOT DBTOOLKIT_UI_PREVIEW)
 endif()
 
 qt_standard_project_setup(REQUIRES 6.5)
+
+add_library(DbToolKitCore STATIC
+    src/core/DomainTypes.cpp
+    src/core/DomainTypes.h
+    src/core/DatabaseDriver.cpp
+    src/core/DatabaseDriver.h
+    src/core/SessionCredentialStore.cpp
+    src/core/SessionCredentialStore.h
+    src/core/CachedSnapshotStore.cpp
+    src/core/CachedSnapshotStore.h
+    src/core/StaleResultGate.cpp
+    src/core/StaleResultGate.h
+    src/models/ConnectionListModel.cpp
+    src/models/ConnectionListModel.h
+    src/models/DatabaseListModel.cpp
+    src/models/DatabaseListModel.h
+    src/models/ServiceListModel.cpp
+    src/models/ServiceListModel.h
+    src/controllers/ApplicationController.cpp
+    src/controllers/ApplicationController.h
+)
+target_include_directories(DbToolKitCore PUBLIC src)
+target_link_libraries(DbToolKitCore PUBLIC Qt6::Core)
 
 qt_add_executable(DbToolKit WIN32
     src/main.cpp
@@ -67,6 +90,7 @@ target_link_libraries(DbToolKit
     PRIVATE 
         Qt6::Quick
         Qt6::QuickControls2
+        DbToolKitCore
 )
 if(NOT DBTOOLKIT_UI_PREVIEW)
     target_link_libraries(DbToolKit PRIVATE

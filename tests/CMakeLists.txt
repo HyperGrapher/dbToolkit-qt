@@ -1,6 +1,10 @@
-add_executable(DbToolKitTests DependencySmokeTests.cpp)
+add_executable(DbToolKitTests
+    DependencySmokeTests.cpp
+    ArchitectureTests.cpp
+)
 target_link_libraries(DbToolKitTests PRIVATE
     Catch2::Catch2WithMain
+    DbToolKitCore
     unofficial-sodium::sodium
     unofficial::sqlite3::sqlite3
 )

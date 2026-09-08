@@ -1,0 +1,20 @@
+<RCC>
+  <qresource prefix="/qt/qml/DbToolKit/">
+    <file alias="Main.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/Main.qml</file>
+    <file alias="Theme.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/Theme.qml</file>
+    <file alias="PreviewData.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/PreviewData.qml</file>
+    <file alias="Glyph.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/Glyph.qml</file>
+    <file alias="ActionButton.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/ActionButton.qml</file>
+    <file alias="Tag.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/Tag.qml</file>
+    <file alias="SearchInput.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/SearchInput.qml</file>
+    <file alias="ServiceCard.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/ServiceCard.qml</file>
+    <file alias="DatabaseInspector.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/DatabaseInspector.qml</file>
+    <file alias="WorkspacePage.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/WorkspacePage.qml</file>
+    <file alias="ConnectionsPage.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/ConnectionsPage.qml</file>
+    <file alias="ViewerPage.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/ViewerPage.qml</file>
+    <file alias="ExportsPage.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/ExportsPage.qml</file>
+    <file alias="SettingsPage.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/SettingsPage.qml</file>
+    <file alias="PreviewDialog.qml">C:/Users/burak/Projects/desktop-apps/DbToolKit-Qt6/dbToolkit-qt/src/qml/PreviewDialog.qml</file>
+  </qresource>
+</RCC>
+

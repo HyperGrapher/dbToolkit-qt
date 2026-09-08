@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\8ee53b69734f81309858c0dc7c87efec\timestamp_(CONFIG).rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\c0d493f9360ccf04b4791e2241e4b481\DbToolKit_json_file_list.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\c0d493f9360ccf04b4791e2241e4b481\qt6dbtoolkit_metatypes.json.gen.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\c0d493f9360ccf04b4791e2241e4b481\qt6dbtoolkit_metatypes.json.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\f9966732847f782453ea39ebb07371b4\dbtoolkit_qmltyperegistrations.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\99f2efdab5bd464d1a8a882a26529cfc\DbToolKit_qmltyperegistration.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt\build-vs\CMakeFiles\DbToolKit_qmltyperegistration" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{825F0946-793F-368C-893F-2E15AA120322}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

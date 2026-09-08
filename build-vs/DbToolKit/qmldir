@@ -1,0 +1,20 @@
+module DbToolKit
+typeinfo DbToolKit.qmltypes
+prefer :/qt/qml/DbToolKit/
+Main 1.0 Main.qml
+singleton Theme 1.0 Theme.qml
+singleton PreviewData 1.0 PreviewData.qml
+Glyph 1.0 Glyph.qml
+ActionButton 1.0 ActionButton.qml
+Tag 1.0 Tag.qml
+SearchInput 1.0 SearchInput.qml
+ServiceCard 1.0 ServiceCard.qml
+DatabaseInspector 1.0 DatabaseInspector.qml
+WorkspacePage 1.0 WorkspacePage.qml
+ConnectionsPage 1.0 ConnectionsPage.qml
+ViewerPage 1.0 ViewerPage.qml
+ExportsPage 1.0 ExportsPage.qml
+SettingsPage 1.0 SettingsPage.qml
+PreviewDialog 1.0 PreviewDialog.qml
+depends QtQuick
+
