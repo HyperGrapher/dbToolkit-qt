@@ -44,6 +44,24 @@ QString ApplicationController::activeConnectionId() const
     return m_activeConnectionId.toString(QUuid::WithoutBraces);
 }
 
+QString ApplicationController::activeConnectionName() const
+{
+    const ConnectionProfile *profile = activeProfile();
+    return profile == nullptr ? QString{} : profile->displayName;
+}
+
+int ApplicationController::activeConnectionEngine() const
+{
+    const ConnectionProfile *profile = activeProfile();
+    return profile == nullptr ? -1 : static_cast<int>(profile->engine);
+}
+
+int ApplicationController::activeConnectionPort() const
+{
+    const ConnectionProfile *profile = activeProfile();
+    return profile == nullptr ? 0 : profile->port;
+}
+
 QString ApplicationController::activeDatabaseName() const
 {
     return m_activeDatabaseName;

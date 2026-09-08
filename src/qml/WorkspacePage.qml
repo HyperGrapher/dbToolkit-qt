@@ -15,8 +15,9 @@ Item {
     property int selectedServiceEngine: 0
     property int selectedServicePort: 0
     property int selectedServiceState: 0
-    readonly property bool hasServiceSelection: selectedServiceName.length > 0
-    readonly property var service: hasServiceSelection ? ({
+    readonly property bool hasServiceSelection: selectedServiceName.length > 0 ||
+                                                (hasApplicationController && applicationController.activeConnectionName.length > 0)
+    readonly property var service: selectedServiceName.length > 0 ? ({
         serviceName: selectedServiceName,
         name: selectedServiceDisplayName,
         engine: selectedServiceEngine,
@@ -24,8 +25,17 @@ Item {
         running: selectedServiceState === 1,
         databases: 0,
         version: ""
+    }) : hasApplicationController && applicationController.activeConnectionName.length > 0 ? ({
+        serviceName: "",
+        name: applicationController.activeConnectionName,
+        engine: applicationController.activeConnectionEngine,
+        port: applicationController.activeConnectionPort,
+        running: true,
+        databases: 0,
+        version: ""
     }) : null
-    readonly property var database: null
+    property var selectedDatabase: null
+    readonly property var database: selectedDatabase
     readonly property bool hasSelection: service !== null && database !== null
     readonly property bool offline: service === null || !service.running
     property bool managedOnly: false
@@ -285,8 +295,18 @@ Item {
                             width: ListView.view.width
                             implicitHeight: 66
                             hoverEnabled: true
-                            readonly property bool selected: false
+                            readonly property bool selected: page.selectedDatabase && page.selectedDatabase.name === databaseRow.name
                             Accessible.name: databaseRow.name
+                            onClicked: page.selectedDatabase = ({
+                                name: databaseRow.name,
+                                owner: databaseRow.owner,
+                                size: databaseRow.size,
+                                tables: databaseRow.tableCount < 0 ? "Unavailable" : String(databaseRow.tableCount),
+                                managed: databaseRow.isManaged,
+                                letter: databaseRow.name.length > 0 ? databaseRow.name[0].toUpperCase() : "?",
+                                color: Theme.accent,
+                                note: ""
+                            })
                             background: Rectangle {
                                 color: databaseRow.selected ? "#202d43" : databaseRow.hovered ? Theme.raised : "transparent"
                                 Rectangle {
@@ -439,6 +459,12 @@ Item {
                 hint: page.offline ? "Cached summaries are available; tables require the service." : ""
                 onClicked: page.browseRequested()
             }
+        }
+    }
+    Connections {
+        target: page.hasApplicationController ? applicationController : null
+        function onActiveConnectionChanged() {
+            page.selectedDatabase = null;
         }
     }
 }

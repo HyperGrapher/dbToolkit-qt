@@ -18,6 +18,9 @@ class ApplicationController final : public QObject {
     Q_PROPERTY(QObject *servicesModel READ servicesModel CONSTANT)
     Q_PROPERTY(QObject *databasesModel READ databasesModel CONSTANT)
     Q_PROPERTY(QString activeConnectionId READ activeConnectionId WRITE setActiveConnectionId NOTIFY activeConnectionChanged)
+    Q_PROPERTY(QString activeConnectionName READ activeConnectionName NOTIFY activeConnectionChanged)
+    Q_PROPERTY(int activeConnectionEngine READ activeConnectionEngine NOTIFY activeConnectionChanged)
+    Q_PROPERTY(int activeConnectionPort READ activeConnectionPort NOTIFY activeConnectionChanged)
     Q_PROPERTY(QString activeDatabaseName READ activeDatabaseName WRITE setActiveDatabaseName NOTIFY activeDatabaseChanged)
     Q_PROPERTY(bool isBusy READ isBusy NOTIFY busyChanged)
     Q_PROPERTY(bool isScanningServices READ isScanningServices NOTIFY scanningServicesChanged)
@@ -29,6 +32,9 @@ public:
     [[nodiscard]] QObject *servicesModel();
     [[nodiscard]] QObject *databasesModel();
     [[nodiscard]] QString activeConnectionId() const;
+    [[nodiscard]] QString activeConnectionName() const;
+    [[nodiscard]] int activeConnectionEngine() const;
+    [[nodiscard]] int activeConnectionPort() const;
     [[nodiscard]] QString activeDatabaseName() const;
     [[nodiscard]] bool isBusy() const;
     [[nodiscard]] bool isScanningServices() const;
