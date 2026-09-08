@@ -1,6 +1,7 @@
 #include "controllers/ApplicationController.h"
 
 #include "core/DatabaseDriver.h"
+#include "services/WindowsDatabaseService.h"
 
 #include <QMetaObject>
 #include <QMetaType>
@@ -12,9 +13,15 @@
 namespace dbtoolkit {
 
 ApplicationController::ApplicationController(QObject *parent)
-    : QObject(parent), m_connections(this), m_services(this), m_databases(this), m_resultGate(this)
+    : QObject(parent)
+    , m_connections(this)
+    , m_services(this)
+    , m_databases(this)
+    , m_resultGate(this)
+    , m_serviceResultGate(this)
 {
     qRegisterMetaType<OperationResult>();
+    QMetaObject::invokeMethod(this, &ApplicationController::refreshServices, Qt::QueuedConnection);
 }
 
 QObject *ApplicationController::connectionsModel()
@@ -45,6 +52,16 @@ QString ApplicationController::activeDatabaseName() const
 bool ApplicationController::isBusy() const
 {
     return m_isBusy;
+}
+
+bool ApplicationController::isScanningServices() const
+{
+    return m_isScanningServices;
+}
+
+int ApplicationController::discoveredServiceCount() const
+{
+    return m_services.rowCount();
 }
 
 void ApplicationController::setSessionProfiles(QList<ConnectionProfile> profiles)
@@ -79,7 +96,8 @@ void ApplicationController::setActiveDatabaseName(const QString &databaseName)
 bool ApplicationController::saveConnection(const QString &displayName, int engine, const QString &host,
                                            int port, const QString &administratorUser,
                                            const QString &administratorPassword,
-                                           const QString &maintenanceDatabase)
+                                           const QString &maintenanceDatabase,
+                                           const QString &serviceName)
 {
     if (displayName.trimmed().isEmpty() || host.trimmed().isEmpty() || administratorUser.trimmed().isEmpty() ||
         port < 1 || port > 65535 || engine < static_cast<int>(DatabaseEngine::PostgreSql) ||
@@ -96,6 +114,7 @@ bool ApplicationController::saveConnection(const QString &displayName, int engin
     profile.port = static_cast<quint16>(port);
     profile.administratorUser = administratorUser.trimmed();
     profile.maintenanceDatabase = maintenanceDatabase.trimmed();
+    profile.serviceName = serviceName.trimmed();
     if (profile.maintenanceDatabase.isEmpty() && profile.engine == DatabaseEngine::PostgreSql) {
         profile.maintenanceDatabase = "postgres";
     }
@@ -164,6 +183,54 @@ void ApplicationController::cancelActiveWork()
     setBusy(false);
 }
 
+void ApplicationController::refreshServices()
+{
+    const quint64 token = m_serviceResultGate.beginWork();
+    setScanningServices(true);
+    QPointer<ApplicationController> controller(this);
+    QThreadPool::globalInstance()->start([controller, token]() {
+        QList<ServiceSummary> services = WindowsDatabaseService::discover();
+        if (controller.isNull()) {
+            return;
+        }
+        QMetaObject::invokeMethod(controller.data(), [controller, token, services = std::move(services)]() mutable {
+            if (controller.isNull() || !controller->m_serviceResultGate.isCurrent(token)) {
+                return;
+            }
+            controller->m_services.replaceServices(std::move(services));
+            controller->setScanningServices(false);
+            emit controller->servicesChanged();
+        }, Qt::QueuedConnection);
+    });
+}
+
+void ApplicationController::startService(const QString &serviceName)
+{
+    if (serviceName.trimmed().isEmpty()) {
+        emit operationCompleted("startService", false, "Choose a discovered database service first.", {});
+        return;
+    }
+
+    const quint64 token = m_serviceResultGate.beginWork();
+    setScanningServices(true);
+    QPointer<ApplicationController> controller(this);
+    QThreadPool::globalInstance()->start([controller, token, serviceName]() {
+        const OperationResult result = WindowsDatabaseService::start(serviceName);
+        if (controller.isNull()) {
+            return;
+        }
+        QMetaObject::invokeMethod(controller.data(), [controller, token, result]() {
+            if (controller.isNull() || !controller->m_serviceResultGate.isCurrent(token)) {
+                return;
+            }
+            controller->setScanningServices(false);
+            emit controller->operationCompleted("startService", result.isSuccess(), result.message,
+                                                result.recoveryHint);
+            controller->refreshServices();
+        }, Qt::QueuedConnection);
+    });
+}
+
 const ConnectionProfile *ApplicationController::activeProfile() const
 {
     return m_connections.profile(m_activeConnectionId);
@@ -176,6 +243,15 @@ void ApplicationController::setBusy(bool isBusy)
     }
     m_isBusy = isBusy;
     emit busyChanged();
+}
+
+void ApplicationController::setScanningServices(bool isScanning)
+{
+    if (m_isScanningServices == isScanning) {
+        return;
+    }
+    m_isScanningServices = isScanning;
+    emit scanningServicesChanged();
 }
 
 } // namespace dbtoolkit

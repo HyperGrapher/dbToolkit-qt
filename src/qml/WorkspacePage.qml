@@ -7,15 +7,31 @@ Item {
     id: page
     property int serviceIndex: 0
     property int databaseIndex: 0
-    readonly property var services: []
+    readonly property bool hasApplicationController: typeof applicationController !== "undefined"
+    readonly property var servicesModel: hasApplicationController ? applicationController.servicesModel : null
     readonly property var databases: []
-    readonly property var service: services[serviceIndex] || null
+    property string selectedServiceName: ""
+    property string selectedServiceDisplayName: ""
+    property int selectedServiceEngine: 0
+    property int selectedServicePort: 0
+    property int selectedServiceState: 0
+    readonly property bool hasServiceSelection: selectedServiceName.length > 0
+    readonly property var service: hasServiceSelection ? ({
+        serviceName: selectedServiceName,
+        name: selectedServiceDisplayName,
+        engine: selectedServiceEngine,
+        port: selectedServicePort,
+        running: selectedServiceState === 1,
+        databases: 0,
+        version: ""
+    }) : null
     readonly property var database: databases[databaseIndex] || null
     readonly property bool hasSelection: service !== null && database !== null
     readonly property bool offline: service === null || !service.running
     property bool managedOnly: false
     signal browseRequested
     signal actionRequested(string action)
+    signal connectRequested(int engine, string displayName, int port, string serviceName)
     ColumnLayout {
         anchors.fill: parent
         spacing: 22
@@ -30,13 +46,23 @@ Item {
                     font.letterSpacing: -0.6
                 }
                 Text {
-                    text: page.offline ? "Showing the last successful database snapshot." : "A clear view of your development databases."
+                    text: page.hasApplicationController && applicationController.isScanningServices
+                          ? "Discovering installed database services…"
+                          : page.hasServiceSelection
+                            ? (page.offline ? "This service is installed but currently stopped." : "Service is running. Connect to load its databases.")
+                            : "Choose an installed database service to get started."
                     color: Theme.muted
                     font.pixelSize: 12
                 }
             }
             Item {
                 Layout.fillWidth: true
+            }
+            ActionButton {
+                text: "Refresh services"
+                glyph: "refresh"
+                enabled: page.hasApplicationController && !applicationController.isScanningServices
+                onClicked: applicationController.refreshServices()
             }
             ActionButton {
                 text: "New database"
@@ -49,19 +75,81 @@ Item {
         }
         RowLayout {
             spacing: 14
+            Rectangle {
+                visible: page.hasApplicationController && applicationController.discoveredServiceCount === 0
+                Layout.fillWidth: true
+                implicitHeight: 116
+                radius: 10
+                color: Theme.panel
+                border.color: Theme.line
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 7
+                    Text {
+                        text: applicationController.isScanningServices ? "Looking for local database services…" : "No PostgreSQL, MySQL, or MariaDB services found"
+                        color: Theme.text
+                        font.pixelSize: 13
+                        font.weight: Font.DemiBold
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                    Text {
+                        text: "Install or register a Windows database service, then refresh."
+                        color: Theme.muted
+                        font.pixelSize: 11
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                }
+            }
             Repeater {
-                model: page.services
+                model: page.servicesModel
                 delegate: ServiceCard {
                     required property int index
-                    required property var modelData
+                    required property string serviceName
+                    required property string displayName
+                    required property int engine
+                    required property int port
+                    required property int serviceState
+                    required property bool isRunning
+                    required property bool canStart
                     Layout.fillWidth: true
-                    service: modelData
+                    service: ({
+                        serviceName: serviceName,
+                        name: displayName,
+                        engine: engine,
+                        port: port,
+                        running: isRunning,
+                        version: "",
+                        color: engine === 0 ? Theme.blue : engine === 1 ? Theme.amber : Theme.accent
+                    })
+                    startAvailable: canStart
                     selected: page.serviceIndex === index
                     onClicked: {
                         page.serviceIndex = index;
                         page.databaseIndex = 0;
+                        page.selectedServiceName = serviceName;
+                        page.selectedServiceDisplayName = displayName;
+                        page.selectedServiceEngine = engine;
+                        page.selectedServicePort = port;
+                        page.selectedServiceState = serviceState;
                     }
-                    onPowerRequested: page.actionRequested(modelData.running ? "Stop service" : "Start service")
+                    onServiceStateChanged: {
+                        if (page.selectedServiceName === serviceName) {
+                            page.selectedServiceState = serviceState;
+                        }
+                    }
+                    onStartRequested: {
+                        page.selectedServiceName = serviceName;
+                        applicationController.startService(serviceName);
+                    }
+                    onConnectRequested: {
+                        page.serviceIndex = index;
+                        page.selectedServiceName = serviceName;
+                        page.selectedServiceDisplayName = displayName;
+                        page.selectedServiceEngine = engine;
+                        page.selectedServicePort = port;
+                        page.selectedServiceState = serviceState;
+                        page.connectRequested(engine, displayName, port, serviceName);
+                    }
                 }
             }
         }

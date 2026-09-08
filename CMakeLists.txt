@@ -40,11 +40,16 @@ add_library(DbToolKitCore STATIC
     src/models/DatabaseListModel.h
     src/models/ServiceListModel.cpp
     src/models/ServiceListModel.h
+    src/services/WindowsDatabaseService.cpp
+    src/services/WindowsDatabaseService.h
     src/controllers/ApplicationController.cpp
     src/controllers/ApplicationController.h
 )
 target_include_directories(DbToolKitCore PUBLIC src)
 target_link_libraries(DbToolKitCore PUBLIC Qt6::Core)
+if(WIN32)
+    target_link_libraries(DbToolKitCore PRIVATE advapi32)
+endif()
 if(NOT DBTOOLKIT_UI_PREVIEW)
     target_compile_definitions(DbToolKitCore PRIVATE DBTOOLKIT_WITH_DATABASE_DRIVERS=1)
     target_link_libraries(DbToolKitCore PRIVATE

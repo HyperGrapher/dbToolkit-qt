@@ -11,9 +11,12 @@ Popup {
     property int selectedEngine: 0
     property bool showPassword: false
     property bool importToNew: false
+    property string suggestedConnectionName: ""
+    property int suggestedPort: 5432
+    property string selectedServiceName: ""
     signal actionRequested(string action)
     signal previewSubmitted(string action)
-    signal connectionSubmitted(string displayName, int engine, string host, int port, string username, string password, string maintenanceDatabase)
+    signal connectionSubmitted(string displayName, int engine, string host, int port, string username, string password, string maintenanceDatabase, string serviceName)
     readonly property bool destructive: ["Delete database", "Recreate database", "Empty database", "Delete row", "Empty table", "Stop service"].includes(kind)
     readonly property bool menuMode: kind === "Database actions" || kind === "Table actions"
     readonly property var fields: kind === "New database" ? [
@@ -98,9 +101,14 @@ Popup {
     focus: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
     onOpened: {
-        selectedEngine = 0;
         showPassword = false;
         importToNew = false;
+    }
+    function prepareConnection(engine, displayName, port, serviceName) {
+        selectedEngine = engine;
+        suggestedConnectionName = displayName;
+        suggestedPort = port;
+        selectedServiceName = serviceName;
     }
     background: Rectangle {
         color: "#1a1f28"
@@ -176,7 +184,10 @@ Popup {
                         text: modelData
                         primary: dialog.selectedEngine === index
                         Layout.fillWidth: true
-                        onClicked: dialog.selectedEngine = index
+                        onClicked: {
+                            dialog.selectedEngine = index;
+                            dialog.suggestedPort = index === 0 ? 5432 : 3306;
+                        }
                     }
                 }
             }
@@ -193,7 +204,7 @@ Popup {
                 TextField {
                     id: connectionNameInput
                     Layout.fillWidth: true
-                    text: ""
+                    text: dialog.suggestedConnectionName
                     placeholderText: "e.g. PostgreSQL local"
                     color: Theme.text
                     placeholderTextColor: Theme.subtle
@@ -214,7 +225,7 @@ Popup {
                     TextField {
                         id: portInput
                         Layout.preferredWidth: 96
-                        text: dialog.selectedEngine === 0 ? "5432" : "3306"
+                        text: String(dialog.suggestedPort > 0 ? dialog.suggestedPort : dialog.selectedEngine === 0 ? 5432 : 3306)
                         validator: IntValidator { bottom: 1; top: 65535 }
                         color: Theme.text
                         horizontalAlignment: TextInput.AlignHCenter
@@ -389,7 +400,8 @@ Popup {
                         if (dialog.kind === "Add connection" || dialog.kind === "Edit connection") {
                             dialog.connectionSubmitted(connectionNameInput.text, dialog.selectedEngine,
                                                        hostInput.text, Number(portInput.text), usernameInput.text,
-                                                       passwordInput.text, maintenanceDatabaseInput.text);
+                                                       passwordInput.text, maintenanceDatabaseInput.text,
+                                                       dialog.selectedServiceName);
                             passwordInput.text = "";
                         }
                         dialog.previewSubmitted(dialog.kind);

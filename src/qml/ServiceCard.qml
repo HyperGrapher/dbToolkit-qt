@@ -7,7 +7,9 @@ AbstractButton {
     id: card
     required property var service
     property bool selected: false
-    signal powerRequested
+    property bool startAvailable: false
+    signal startRequested
+    signal connectRequested
     implicitHeight: 116
     hoverEnabled: true
     Accessible.name: service.name + (service.running ? ", running" : ", stopped")
@@ -69,12 +71,12 @@ AbstractButton {
                 Layout.fillWidth: true
             }
             ActionButton {
+                visible: card.startAvailable
+                text: "Start"
                 glyph: "power"
-                quiet: true
-                implicitWidth: 28
                 implicitHeight: 28
-                hint: card.service.running ? "Stop service" : "Start service"
-                onClicked: card.powerRequested()
+                hint: "Start Windows service"
+                onClicked: card.startRequested()
             }
         }
         RowLayout {
@@ -92,11 +94,11 @@ AbstractButton {
             Item {
                 Layout.fillWidth: true
             }
-            Text {
-                text: "v" + card.service.version
-                color: Theme.subtle
-                font.family: Theme.mono
-                font.pixelSize: 10
+            ActionButton {
+                text: "Connect"
+                glyph: "arrow"
+                implicitHeight: 28
+                onClicked: card.connectRequested()
             }
         }
     }

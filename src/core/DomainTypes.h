@@ -68,7 +68,11 @@ struct ConnectionCredentials {
 
 struct ServiceSummary {
     QUuid connectionId;
+    QString serviceName;
     QString displayName;
+    QString executablePath;
+    DatabaseEngine engine{DatabaseEngine::PostgreSql};
+    quint16 port{0};
     ServiceState state{ServiceState::Unknown};
     QString detail;
     QDateTime observedAt;

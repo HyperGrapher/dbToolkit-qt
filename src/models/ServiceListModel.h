@@ -15,7 +15,13 @@ public:
         DisplayNameRole,
         StateRole,
         DetailRole,
-        ObservedAtRole
+        ObservedAtRole,
+        ServiceNameRole,
+        ExecutablePathRole,
+        EngineRole,
+        PortRole,
+        RunningRole,
+        StartableRole
     };
     Q_ENUM(Role)
 

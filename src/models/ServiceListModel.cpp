@@ -32,6 +32,18 @@ QVariant ServiceListModel::data(const QModelIndex &index, int role) const
         return service.detail;
     case ObservedAtRole:
         return service.observedAt;
+    case ServiceNameRole:
+        return service.serviceName;
+    case ExecutablePathRole:
+        return service.executablePath;
+    case EngineRole:
+        return static_cast<int>(service.engine);
+    case PortRole:
+        return service.port;
+    case RunningRole:
+        return service.state == ServiceState::Running;
+    case StartableRole:
+        return service.state == ServiceState::Stopped;
     default:
         return {};
     }
@@ -41,9 +53,15 @@ QHash<int, QByteArray> ServiceListModel::roleNames() const
 {
     return {{ConnectionIdRole, "connectionId"},
             {DisplayNameRole, "displayName"},
-            {StateRole, "state"},
+            {StateRole, "serviceState"},
             {DetailRole, "detail"},
-            {ObservedAtRole, "observedAt"}};
+            {ObservedAtRole, "observedAt"},
+            {ServiceNameRole, "serviceName"},
+            {ExecutablePathRole, "executablePath"},
+            {EngineRole, "engine"},
+            {PortRole, "port"},
+            {RunningRole, "isRunning"},
+            {StartableRole, "canStart"}};
 }
 
 void ServiceListModel::replaceServices(QList<ServiceSummary> services)

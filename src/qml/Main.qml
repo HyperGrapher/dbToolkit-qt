@@ -39,6 +39,9 @@ ApplicationWindow {
             toast.open();
             return;
         }
+        if (action === "Add connection") {
+            previewDialog.prepareConnection(0, "", 5432, "");
+        }
         previewDialog.kind = action;
         previewDialog.open();
     }
@@ -349,6 +352,11 @@ ApplicationWindow {
                 id: workspacePage
                 onBrowseRequested: window.openViewerFromWorkspace()
                 onActionRequested: action => window.showAction(action)
+                onConnectRequested: (engine, displayName, port, serviceName) => {
+                    previewDialog.prepareConnection(engine, displayName, port, serviceName);
+                    previewDialog.kind = "Add connection";
+                    previewDialog.open();
+                }
             }
             ConnectionsPage {
                 onActionRequested: action => window.showAction(action)
@@ -433,13 +441,13 @@ ApplicationWindow {
             toast.text = "This action is ready for a selected live connection.";
             toast.open();
         }
-        onConnectionSubmitted: (displayName, engine, host, port, username, password, maintenanceDatabase) => {
+        onConnectionSubmitted: (displayName, engine, host, port, username, password, maintenanceDatabase, serviceName) => {
             if (typeof applicationController === "undefined") {
                 toast.text = "Connection testing is available in the compiled application.";
                 toast.open();
                 return;
             }
-            if (applicationController.saveConnection(displayName, engine, host, port, username, password, maintenanceDatabase)) {
+            if (applicationController.saveConnection(displayName, engine, host, port, username, password, maintenanceDatabase, serviceName)) {
                 applicationController.testActiveConnection();
             }
         }
@@ -447,7 +455,7 @@ ApplicationWindow {
     Connections {
         target: typeof applicationController === "undefined" ? null : applicationController
         function onOperationCompleted(operation, succeeded, message, recoveryHint) {
-            if (operation !== "saveConnection" && operation !== "testConnection") {
+            if (operation !== "saveConnection" && operation !== "testConnection" && operation !== "startService") {
                 return;
             }
             toast.text = succeeded ? message : message + (recoveryHint.length > 0 ? " " + recoveryHint : "");
