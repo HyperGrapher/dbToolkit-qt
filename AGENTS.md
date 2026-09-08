@@ -5,7 +5,9 @@
 - Read `docs/IMPLEMENTATION_PLAN.md` before starting implementation and update it after each work session.
 - Keep stable step IDs. Mark a step `[x]` only after its stated acceptance checks pass; leave partial steps unchecked and record completed substeps.
 - Update the plan's Handoff section with completed work, verification results, blockers, and the exact next action. Never describe unrun checks as passing.
-- FIRST BUILD CHECKPOINT: Do not run CMake configuration, builds, dependency installation, or tests until the user reports their first build and authorizes continuation. Preparation stops at P01c in the implementation plan.
+- The user completed the first build and tests and authorized continuation. Use the existing `build/` directory for subsequent builds and checks.
+- Do not rebuild or install dependencies without explicit user authorization. Automatic vcpkg installation is disabled by default through `DBTOOLKIT_INSTALL_DEPENDENCIES=OFF`; do not enable it. During UI review, use `tools/Preview.ps1` to run QML directly with no build. The CMake UI preview also excludes backend dependencies.
+- CURRENT ORDER: Implement and review the navigable UI preview before backend features. Defer P04 (encrypted vault and all lock/master-password screens) until after P13 and before release validation. Until P04, use fictional fixtures for the preview and keep any future real development credentials session-only; do not introduce plaintext credential persistence.
 - Keep C++ sources in `src/`, QML in `src/qml/`, assets in `resources/`, and tests in `tests/`. Keep CMake configuration and `vcpkg.json` at the project root.
 
 - Do not preserve backward compatibility unless it is an explicit requirement. Remove obsolete APIs, code paths, compatibility shims, and deprecated abstractions instead of extending them.

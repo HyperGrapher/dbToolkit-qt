@@ -34,7 +34,8 @@ important actions understandable and deliberate.
 ## Product goals
 
 - Make local database setup and maintenance quick to understand.
-- Keep connection details and saved credentials available only after the user unlocks the app.
+- Keep connection details, cached database metadata, and saved credentials available
+  only after the user unlocks the app, including while a database service is offline.
 - Present database health, content, and ownership in a simple visual workflow.
 - Make destructive operations explicit through clear labels and confirmations.
 - Support both newly created databases and existing databases the user wants
@@ -42,7 +43,15 @@ important actions understandable and deliberate.
 
 ## Key user experience
 
-When the app opens, the user unlocks their local vault. They see the available database services on the system (Mysql Postgres). They select or create a connection to a local database server, ensure its service is running, and then they navigate tomanagement page for that database service, see the databases available on that server. From there, they can create a database for a new project, inspect an existing one, copy its connection details, export it, or perform maintenance actions when needed.
+When the app opens, the user unlocks their local vault and sees the supported local
+database services. They select or create a server connection. The first connection
+requires the administrator username and password needed by that server. When the
+service is online, the app refreshes its database list and stores an encrypted
+snapshot. When it is offline, the last successful snapshot remains visible with a
+clear stale/offline label, and saved credentials and connection strings remain
+available. From the selected server and database, the user can create or adopt a
+project database, browse its tables, import or export SQL, copy connection details,
+or perform maintenance actions.
 
 ## Core features
 
@@ -50,6 +59,11 @@ When the app opens, the user unlocks their local vault. They see the available d
 
 - Protect saved local credentials with a master password.
 - Create, edit, test, select, and remove saved database-server connections.
+- Require an administrator/root password when first connecting to a server that
+  needs password authentication. Include masked password fields in connection setup
+  and editing, with reveal-on-demand.
+- Store administrator and managed project credentials in the encrypted local vault
+  so later features can reconnect without repeatedly prompting.
 - Keep connection details for databases managed by the app available for
   viewing and copying when needed.
 - Show or hide stored database passwords on demand.
@@ -60,6 +74,8 @@ When the app opens, the user unlocks their local vault. They see the available d
 - Show whether a detected service is running or stopped.
 - Start and stop a service from within the app.
 - Refresh service status and reconnect after a service becomes available.
+- Keep the last successfully refreshed database list available while its service is
+  stopped. Offline mode must be visibly marked and must not imply live status.
 
 ### Database overview
 
@@ -69,6 +85,8 @@ When the app opens, the user unlocks their local vault. They see the available d
 - Select a database to view its details, including connection information,
   owner, tables, server information, and settings where available.
 - Refresh the database list and details after external changes.
+- Cache the database list, connection details, managed status, notes, ownership,
+  size, and table-count summary after successful refreshes. Do not cache table rows.
 
 ### Database lifecycle management
 
@@ -84,7 +102,10 @@ When the app opens, the user unlocks their local vault. They see the available d
 
 ### Data browsing and editing
 
-- Open a database viewer to browse its tables.
+- Require the user to select a server connection and database before opening the
+  table viewer. Keep the selected database visible in the viewer header and allow
+  switching databases through a selector.
+- Open the selected database in a viewer to browse its tables.
 - See table information and page through rows of data.
 - Filter and sort table data to find records quickly.
 - Inspect a selected cell and copy its value.
@@ -92,12 +113,35 @@ When the app opens, the user unlocks their local vault. They see the available d
   appropriate.
 - Delete an individual row or empty a table after confirmation.
 
-### Export and everyday workflow
+### SQL import, export, and everyday workflow
 
 - Export a selected database to an SQL file.
+- Import an engine-native plain `.sql` file into a newly created database or merge
+  it into an existing selected database.
+- Always execute an import against the target database selected in dbToolKit. A
+  database name embedded in a dump must not rename, replace, or redirect away from
+  that target.
+- Before execution, inspect database-level directives such as `CREATE DATABASE`,
+  `DROP DATABASE`, MySQL/MariaDB `USE`, and PostgreSQL `\\connect`. Remove recognized
+  dump-level target-selection directives and reject dynamic or unrecognized database
+  context changes before applying any statements.
+- Merge stops at the first SQL error and uses a single transaction where the engine
+  supports it. MySQL/MariaDB imports must warn that DDL can commit implicitly and
+  report any partially applied statements accurately.
+- Show import progress, cancellation, source engine compatibility, success, and a
+  concise failure report without exposing credentials or sensitive SQL values.
 - Copy a database connection string for use in an application or another tool.
 - Keep the app available from the Windows notification area for quick access.
 - Show clear status and error messages for connection, service, and database actions.
+
+### Appearance and layout
+
+- Let the user choose among at least three dark themes: dbToolKit Midnight, Sublime
+  Text Default Dark, and Nord.
+- Apply theme changes immediately and remember the choice locally.
+- Keep table/list columns stable and right-align trailing metadata and actions. This
+  includes export size/status/location controls and connection status/edit/open
+  controls at every supported window size.
 
 ## Safety and privacy expectations
 
@@ -107,6 +151,10 @@ When the app opens, the user unlocks their local vault. They see the available d
   emptying tables, require a confirmation step that explains the effect.
 - Failures should explain what the user can check next, such as an unavailable
   service or invalid administrator credentials.
+- SQL import must show the selected target and require confirmation before executing
+  a script. Imported scripts run with only the selected connection's privileges.
+- Offline database information must show when it was last refreshed and must never
+  be presented as current server state.
 
 ## Supported scope
 
@@ -126,3 +174,8 @@ When the app opens, the user unlocks their local vault. They see the available d
 - spdlog — application logging.
 - Catch2 — automated tests.
 
+No additional application library is required for the new features. Qt provides
+process execution, file I/O, models, settings, and theming. SQL import and export use
+the compatible command-line utilities installed with the selected database engine:
+`psql`/`pg_dump` for PostgreSQL and `mysql` or `mariadb` plus their dump utilities
+for MySQL/MariaDB. Missing utilities are reported with a path-selection action.

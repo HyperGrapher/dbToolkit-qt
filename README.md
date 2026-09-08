@@ -1,78 +1,103 @@
 # dbToolKit
 
-A Windows Qt Quick companion for local MySQL, MariaDB, and PostgreSQL databases.
-The current implementation is a dark application shell and build foundation;
-database and vault features are not implemented yet.
+A dark Qt Quick workspace for local MySQL, MariaDB, and PostgreSQL databases.
+The current version is a navigable **UI preview with fictional sample data**.
+There are no database connections, service changes, SQL exports, saved credentials,
+or vault/password screens in this preview.
+
+## Open the preview — no build required
+
+From the project directory, run:
+
+```powershell
+.\tools\Preview.ps1
+```
+
+The launcher uses `qml.exe` from your Qt MinGW installation on PATH. It copies the
+QML module into `build/ui-preview/` and opens it directly using Qt's Basic style.
+It does **not** invoke CMake, vcpkg, a compiler, or dependency installation.
+Rerun it after QML changes to refresh the preview. Close the previous preview window
+before relaunching if you want only one window.
+
+Explore:
+
+- **Overview:** service cards, database search, managed filter, selection, and details.
+- **Connections:** sample local servers and connection forms. The next UI pass adds
+  administrator password capture and aligns trailing connection actions.
+- **Table viewer:** sample users, local filtering, table navigation, Data/Structure tabs,
+  and cell selection/inspection. The next pass requires an explicit database selection.
+- **Exports:** illustrative export history and SQL import/export dialogs. Trailing
+  metadata/actions will use fixed alignment columns.
+- **Settings:** Midnight, Sublime Text Default Dark, and Nord theme choices.
+- **Dialogs:** creation, adoption, editing, export, and destructive-action previews.
+
+Navigation and sample selection work in memory. Action buttons either open a
+preview dialog or explain that the action is not connected. Submitting a dialog
+makes no database, file, or system changes. `Ctrl+1`, `Ctrl+2`, and `Ctrl+3` open
+Overview, Connections, and Table Viewer respectively.
+
+The previous `build/DbToolKit.exe` is still the last compiled version. Use the
+preview launcher to see the new design without compiling it.
+
+## Build policy
+
+The user completed the initial MinGW build and dependency tests. A subsequent
+CMake regeneration started a dependency rebuild after the build environment
+changed; it was stopped at the user's request. All 18 original packages were
+restored from existing binary archives matching the original installation ABIs.
+The restored installation is recognized by vcpkg and the existing tests pass.
+Recovery metadata is preserved under `build/ui-preview/dependency-recovery/`.
+
+Automatic dependency installation is now **off by default**:
+
+- `DBTOOLKIT_UI_PREVIEW=ON` keeps a compiled preview Qt-only.
+- `DBTOOLKIT_INSTALL_DEPENDENCIES=OFF` disables vcpkg installation before `project()`
+  runs, including during automatic CMake regeneration.
+- Turning off UI preview mode requires already installed backend libraries.
+- Do not enable dependency installation without the user's explicit authorization.
+
+The new CMake configuration has been inspected but deliberately not configured or
+built after the stop request. The QML preview has been validated directly instead.
+Always use the existing `build/` directory. Do not create another build tree.
+
+## Validation
+
+QML sources are checked with `qmlformat` and `qmllint`. Runtime screenshot checks
+cover all five screens and creation/connection/export/destructive dialogs at
+1440×900, plus constrained layouts at 1000×650. Captures and logs are under
+`build/ui-preview/`.
+
+The existing C++ dependency smoke tests can be run without compiling:
+
+```powershell
+ctest --test-dir build --output-on-failure
+```
+
+Those tests validate the SQLite and libsodium runtimes, not UI or future backend
+features. They are omitted from a newly configured Qt-only preview build.
+
+## Implementation order
 
 See [the PRD](docs/PRD.md) and [the implementation checklist](docs/IMPLEMENTATION_PLAN.md).
-
-## First build (user-run checkpoint)
-
-No configuration, dependency installation, compilation, or tests have been run by
-the agent. The first configure may take a long time because vcpkg builds dependencies.
-Run these commands in PowerShell. Stop if any command fails and share its output.
-
-The commands below match the inspected machine: Qt 6.11.1, GCC 13.1, Ninja,
-CMake on PATH, and vcpkg at `C:\Users\burak\vcpkg`. CMake 3.24 or newer is required.
-Both vcpkg triplets use MinGW to avoid mixing MSVC libraries with the Qt MinGW kit.
-Keep the single `build/` directory; do not reuse a cache configured with another compiler.
-
-### 1. Configure
-
-```powershell
-Set-Location 'C:\Users\burak\Projects\desktop-apps\DbToolKit-Qt6\dbToolkit-qt'
-$env:VCPKG_ROOT = 'C:\Users\burak\vcpkg'
-$env:PATH = "C:\Qt\Tools\mingw1310_64\bin;C:\Qt\Tools\Ninja;C:\Qt\6.11.1\mingw_64\bin;$env:PATH"
-
-cmake -S . -B build -G Ninja `
-    '-DCMAKE_BUILD_TYPE=Release' `
-    '-DCMAKE_C_COMPILER=C:/Qt/Tools/mingw1310_64/bin/gcc.exe' `
-    '-DCMAKE_CXX_COMPILER=C:/Qt/Tools/mingw1310_64/bin/g++.exe' `
-    '-DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe' `
-    '-DCMAKE_PREFIX_PATH=C:/Qt/6.11.1/mingw_64' `
-    '-DCMAKE_TOOLCHAIN_FILE=C:/Users/burak/vcpkg/scripts/buildsystems/vcpkg.cmake' `
-    '-DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic' `
-    '-DVCPKG_HOST_TRIPLET=x64-mingw-dynamic' `
-    '-DBUILD_TESTING=ON'
-```
-
-### 2. Build
-
-```powershell
-cmake --build build --parallel
-```
-
-Expected application: `build\DbToolKit.exe`.
-Expected test executable: `build\tests\DbToolKitTests.exe`.
-
-### 3. Test and launch from the same PowerShell session
-
-```powershell
-$env:PATH = "$PWD\build\vcpkg_installed\x64-mingw-dynamic\bin;$env:PATH"
-ctest --test-dir build --output-on-failure
-& .\build\DbToolKit.exe
-```
-
-CTest should discover two dependency smoke tests: SQLite opens an in-memory
-database, and libsodium authenticates a message and rejects tampering. These do
-not connect to or modify a database server and do not validate the future vault.
-
-The app should show a dark dbToolKit window with a sidebar and a
-"Workspace foundation" notice. No connection or vault controls are expected yet.
-Report configure/build/test results and whether that window opens before the next stage.
-
-These launch instructions use runtime DLLs from PATH for local development.
-A self-contained portable folder and deployment verification belong to P14.
+Update and review the UI first, then implement backend workflows. Planned additions
+include SQL import/merge, offline cached database summaries, first-use administrator
+credentials, explicit Table Viewer database selection, and three dark themes.
+The encrypted vault and
+all lock/master-password screens are deferred until after P13 and before final
+release validation. Real development credentials must remain session-only until
+the vault is available.
 
 ## Layout
 
 - `src/`: C++ application code.
-- `src/qml/`: QML interface.
+- `src/qml/`: QML screens, shared controls, theme, and isolated preview fixtures.
 - `resources/`: images and Windows executable icon.
-- `tests/`: Catch2 tests registered with CTest.
-- `docs/`: product requirements and implementation progress.
-- `build/`: the only generated build directory, including local vcpkg output.
+- `tests/`: Catch2 dependency tests.
+- `tools/`: the no-build QML preview launcher.
+- `docs/`: requirements and progress.
+- `build/`: the only generated build directory, including local vcpkg and preview output.
 
-Qt comes from the installed Qt SDK. Other dependencies use the unchanged
-`vcpkg.json` baseline. MinGW triplets are community-maintained; first-build
-compatibility with these pinned dependencies remains unverified at this checkpoint.
+Qt comes from the installed Qt SDK. The dependency manifest and baseline are unchanged.
+No additional library is planned for the new requirements. SQL import/export will use
+the compatible database client utilities installed on the machine; Qt provides the
+remaining process, file, model, settings, and theme support.
