@@ -45,6 +45,13 @@ add_library(DbToolKitCore STATIC
 )
 target_include_directories(DbToolKitCore PUBLIC src)
 target_link_libraries(DbToolKitCore PUBLIC Qt6::Core)
+if(NOT DBTOOLKIT_UI_PREVIEW)
+    target_compile_definitions(DbToolKitCore PRIVATE DBTOOLKIT_WITH_DATABASE_DRIVERS=1)
+    target_link_libraries(DbToolKitCore PRIVATE
+        libpqxx::pqxx
+        unofficial::libmariadb
+    )
+endif()
 
 qt_add_executable(DbToolKit WIN32
     src/main.cpp

@@ -76,7 +76,52 @@ void ApplicationController::setActiveDatabaseName(const QString &databaseName)
     emit activeDatabaseChanged();
 }
 
-void ApplicationController::testActiveConnection(const QString &administratorPassword)
+bool ApplicationController::saveConnection(const QString &displayName, int engine, const QString &host,
+                                           int port, const QString &administratorUser,
+                                           const QString &administratorPassword,
+                                           const QString &maintenanceDatabase)
+{
+    if (displayName.trimmed().isEmpty() || host.trimmed().isEmpty() || administratorUser.trimmed().isEmpty() ||
+        port < 1 || port > 65535 || engine < static_cast<int>(DatabaseEngine::PostgreSql) ||
+        engine > static_cast<int>(DatabaseEngine::MariaDb)) {
+        emit operationCompleted("saveConnection", false,
+                                "Enter a connection name, host, port, and administrator username.", {});
+        return false;
+    }
+
+    ConnectionProfile profile;
+    profile.displayName = displayName.trimmed();
+    profile.engine = static_cast<DatabaseEngine>(engine);
+    profile.host = host.trimmed();
+    profile.port = static_cast<quint16>(port);
+    profile.administratorUser = administratorUser.trimmed();
+    profile.maintenanceDatabase = maintenanceDatabase.trimmed();
+    if (profile.maintenanceDatabase.isEmpty() && profile.engine == DatabaseEngine::PostgreSql) {
+        profile.maintenanceDatabase = "postgres";
+    }
+
+    ConnectionCredentials credentials;
+    credentials.administratorPassword = administratorPassword;
+    m_sessionCredentials.store(profile.id, std::move(credentials));
+    m_connections.upsertProfile(profile);
+    setActiveConnectionId(profile.id.toString(QUuid::WithoutBraces));
+    emit operationCompleted("saveConnection", true,
+                            "Connection saved for this app session. It will be encrypted and persisted with P04.", {});
+    return true;
+}
+
+void ApplicationController::removeActiveConnection()
+{
+    if (m_activeConnectionId.isNull()) {
+        return;
+    }
+
+    m_sessionCredentials.remove(m_activeConnectionId);
+    m_connections.removeProfile(m_activeConnectionId);
+    setActiveConnectionId({});
+}
+
+void ApplicationController::testActiveConnection()
 {
     const ConnectionProfile *profile = activeProfile();
     if (profile == nullptr) {
@@ -85,8 +130,12 @@ void ApplicationController::testActiveConnection(const QString &administratorPas
     }
     const quint64 token = m_resultGate.beginWork();
     const ConnectionProfile profileCopy = *profile;
-    ConnectionCredentials credentials;
-    credentials.administratorPassword = administratorPassword;
+    ConnectionCredentials credentials = m_sessionCredentials.credentialsFor(profile->id);
+    if (credentials.administratorPassword.isEmpty()) {
+        emit operationCompleted("testConnection", false,
+                                "Enter an administrator password before testing this connection.", {});
+        return;
+    }
     setBusy(true);
     QPointer<ApplicationController> controller(this);
     QThreadPool::globalInstance()->start([controller, token, profileCopy, credentials = std::move(credentials)]() mutable {

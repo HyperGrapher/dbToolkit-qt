@@ -473,7 +473,30 @@ ApplicationWindow {
         cellValue: viewerPage.selectedValue
         onActionRequested: action => kind = action
         onPreviewSubmitted: action => {
+            if (action === "Add connection" || action === "Edit connection") {
+                return;
+            }
             toast.text = "Preview only — no changes were made.";
+            toast.open();
+        }
+        onConnectionSubmitted: (displayName, engine, host, port, username, password, maintenanceDatabase) => {
+            if (typeof applicationController === "undefined") {
+                toast.text = "Connection testing is available in the compiled application.";
+                toast.open();
+                return;
+            }
+            if (applicationController.saveConnection(displayName, engine, host, port, username, password, maintenanceDatabase)) {
+                applicationController.testActiveConnection();
+            }
+        }
+    }
+    Connections {
+        target: typeof applicationController === "undefined" ? null : applicationController
+        function onOperationCompleted(operation, succeeded, message, recoveryHint) {
+            if (operation !== "saveConnection" && operation !== "testConnection") {
+                return;
+            }
+            toast.text = succeeded ? message : message + (recoveryHint.length > 0 ? " " + recoveryHint : "");
             toast.open();
         }
     }

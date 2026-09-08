@@ -29,6 +29,8 @@ public:
     [[nodiscard]] QHash<int, QByteArray> roleNames() const override;
 
     void replaceProfiles(QList<ConnectionProfile> profiles);
+    void upsertProfile(ConnectionProfile profile);
+    bool removeProfile(const QUuid &id);
     [[nodiscard]] const ConnectionProfile *profile(const QUuid &id) const;
 
 private:

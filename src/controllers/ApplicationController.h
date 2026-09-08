@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/DomainTypes.h"
+#include "core/SessionCredentialStore.h"
 #include "core/StaleResultGate.h"
 #include "models/ConnectionListModel.h"
 #include "models/DatabaseListModel.h"
@@ -30,7 +31,12 @@ public:
     void setSessionProfiles(QList<ConnectionProfile> profiles);
     void setActiveConnectionId(const QString &connectionId);
     void setActiveDatabaseName(const QString &databaseName);
-    Q_INVOKABLE void testActiveConnection(const QString &administratorPassword);
+    Q_INVOKABLE bool saveConnection(const QString &displayName, int engine, const QString &host,
+                                    int port, const QString &administratorUser,
+                                    const QString &administratorPassword,
+                                    const QString &maintenanceDatabase = {});
+    Q_INVOKABLE void removeActiveConnection();
+    Q_INVOKABLE void testActiveConnection();
     Q_INVOKABLE void cancelActiveWork();
 
 signals:
@@ -46,6 +52,7 @@ private:
     ConnectionListModel m_connections;
     ServiceListModel m_services;
     DatabaseListModel m_databases;
+    SessionCredentialStore m_sessionCredentials;
     StaleResultGate m_resultGate;
     QUuid m_activeConnectionId;
     QString m_activeDatabaseName;

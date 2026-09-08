@@ -13,6 +13,7 @@ Popup {
     property bool importToNew: false
     signal actionRequested(string action)
     signal previewSubmitted(string action)
+    signal connectionSubmitted(string displayName, int engine, string host, int port, string username, string password, string maintenanceDatabase)
     readonly property bool destructive: ["Delete database", "Recreate database", "Empty database", "Delete row", "Empty table", "Stop service"].includes(kind)
     readonly property bool menuMode: kind === "Database actions" || kind === "Table actions"
     readonly property var fields: kind === "New database" ? [
@@ -30,33 +31,6 @@ Popup {
             label: "PROJECT NOTE",
             value: "",
             placeholder: "A little context for future you…"
-        }
-    ] : kind === "Add connection" || kind === "Edit connection" ? [
-        {
-            label: "CONNECTION NAME",
-            value: kind === "Edit connection" ? "PostgreSQL local" : "",
-            placeholder: "e.g. PostgreSQL local"
-        },
-        {
-            label: "HOST",
-            value: "localhost",
-            placeholder: "localhost"
-        },
-        {
-            label: "PORT",
-            value: selectedEngine === 0 ? "5432" : selectedEngine === 1 ? "3306" : "3307",
-            placeholder: "Port"
-        },
-        {
-            label: "USERNAME",
-            value: selectedEngine === 0 ? "postgres" : "root",
-            placeholder: "Username"
-        },
-        {
-            label: "ADMINISTRATOR PASSWORD",
-            value: "",
-            placeholder: "Enter administrator password",
-            password: true
         }
     ] : kind === "Export database" ? [
         {
@@ -206,6 +180,85 @@ Popup {
                     }
                 }
             }
+            ColumnLayout {
+                visible: dialog.kind === "Add connection" || dialog.kind === "Edit connection"
+                Layout.fillWidth: true
+                spacing: 10
+                Text {
+                    text: "CONNECTION NAME"
+                    color: Theme.subtle
+                    font.pixelSize: 9
+                    font.letterSpacing: 0.7
+                }
+                TextField {
+                    id: connectionNameInput
+                    Layout.fillWidth: true
+                    text: dialog.kind === "Edit connection" ? "PostgreSQL local" : ""
+                    placeholderText: "e.g. PostgreSQL local"
+                    color: Theme.text
+                    placeholderTextColor: Theme.subtle
+                    background: Rectangle { color: Theme.background; radius: 6; border.color: connectionNameInput.activeFocus ? Theme.accent : Theme.line }
+                }
+                Text { text: "HOST  /  PORT"; color: Theme.subtle; font.pixelSize: 9; font.letterSpacing: 0.7 }
+                RowLayout {
+                    Layout.fillWidth: true
+                    TextField {
+                        id: hostInput
+                        Layout.fillWidth: true
+                        text: "localhost"
+                        placeholderText: "localhost"
+                        color: Theme.text
+                        placeholderTextColor: Theme.subtle
+                        background: Rectangle { color: Theme.background; radius: 6; border.color: hostInput.activeFocus ? Theme.accent : Theme.line }
+                    }
+                    TextField {
+                        id: portInput
+                        Layout.preferredWidth: 96
+                        text: dialog.selectedEngine === 0 ? "5432" : "3306"
+                        validator: IntValidator { bottom: 1; top: 65535 }
+                        color: Theme.text
+                        horizontalAlignment: TextInput.AlignHCenter
+                        background: Rectangle { color: Theme.background; radius: 6; border.color: portInput.activeFocus ? Theme.accent : Theme.line }
+                    }
+                }
+                Text { text: "ADMINISTRATOR USER"; color: Theme.subtle; font.pixelSize: 9; font.letterSpacing: 0.7 }
+                TextField {
+                    id: usernameInput
+                    Layout.fillWidth: true
+                    text: dialog.selectedEngine === 0 ? "postgres" : "root"
+                    color: Theme.text
+                    background: Rectangle { color: Theme.background; radius: 6; border.color: usernameInput.activeFocus ? Theme.accent : Theme.line }
+                }
+                Text { text: "ADMINISTRATOR PASSWORD"; color: Theme.subtle; font.pixelSize: 9; font.letterSpacing: 0.7 }
+                RowLayout {
+                    Layout.fillWidth: true
+                    TextField {
+                        id: passwordInput
+                        Layout.fillWidth: true
+                        placeholderText: "Enter administrator password"
+                        echoMode: dialog.showPassword ? TextInput.Normal : TextInput.Password
+                        color: Theme.text
+                        placeholderTextColor: Theme.subtle
+                        background: Rectangle { color: Theme.background; radius: 6; border.color: passwordInput.activeFocus ? Theme.accent : Theme.line }
+                    }
+                    ActionButton { text: dialog.showPassword ? "Hide" : "Show"; glyph: "eye"; quiet: true; onClicked: dialog.showPassword = !dialog.showPassword }
+                }
+                Text {
+                    visible: dialog.selectedEngine === 0
+                    text: "POSTGRES MAINTENANCE DATABASE"
+                    color: Theme.subtle
+                    font.pixelSize: 9
+                    font.letterSpacing: 0.7
+                }
+                TextField {
+                    id: maintenanceDatabaseInput
+                    visible: dialog.selectedEngine === 0
+                    Layout.fillWidth: true
+                    text: "postgres"
+                    color: Theme.text
+                    background: Rectangle { color: Theme.background; radius: 6; border.color: maintenanceDatabaseInput.activeFocus ? Theme.accent : Theme.line }
+                }
+            }
             RowLayout {
                 visible: dialog.kind === "Import SQL"
                 spacing: 8
@@ -329,10 +382,16 @@ Popup {
                     onClicked: dialog.close()
                 }
                 ActionButton {
-                    text: dialog.destructive ? "Confirm preview" : dialog.kind === "New database" ? "Create database" : dialog.kind === "Export database" ? "Export SQL" : dialog.kind === "Import SQL" ? (dialog.importToNew ? "Create and import" : "Merge SQL") : "Done"
+                    text: dialog.destructive ? "Confirm preview" : dialog.kind === "Add connection" || dialog.kind === "Edit connection" ? "Save and test" : dialog.kind === "New database" ? "Create database" : dialog.kind === "Export database" ? "Export SQL" : dialog.kind === "Import SQL" ? (dialog.importToNew ? "Create and import" : "Merge SQL") : "Done"
                     primary: !dialog.destructive
                     danger: dialog.destructive
                     onClicked: {
+                        if (dialog.kind === "Add connection" || dialog.kind === "Edit connection") {
+                            dialog.connectionSubmitted(connectionNameInput.text, dialog.selectedEngine,
+                                                       hostInput.text, Number(portInput.text), usernameInput.text,
+                                                       passwordInput.text, maintenanceDatabaseInput.text);
+                            passwordInput.text = "";
+                        }
                         dialog.previewSubmitted(dialog.kind);
                         dialog.close();
                     }
