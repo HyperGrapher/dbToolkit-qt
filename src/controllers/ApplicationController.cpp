@@ -146,11 +146,12 @@ void ApplicationController::testActiveConnection()
         if (controller.isNull()) {
             return;
         }
-        QMetaObject::invokeMethod(controller.data(), [controller, token, result]() {
+        QMetaObject::invokeMethod(controller.data(), [controller, token, profileId = profileCopy.id, result]() {
             if (controller.isNull() || !controller->m_resultGate.isCurrent(token)) {
                 return;
             }
             controller->setBusy(false);
+            controller->m_connections.setTestResult(profileId, result.isSuccess(), QDateTime::currentDateTime());
             controller->operationCompleted("testConnection", result.isSuccess(), result.message,
                                            result.recoveryHint);
         }, Qt::QueuedConnection);

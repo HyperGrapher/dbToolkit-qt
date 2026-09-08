@@ -24,6 +24,12 @@ enum class ServiceState {
     Unavailable
 };
 
+enum class ConnectionState {
+    Untested,
+    Online,
+    Offline
+};
+
 enum class OperationStatus {
     Succeeded,
     Failed,
@@ -50,6 +56,8 @@ struct ConnectionProfile {
     QString administratorUser;
     QString maintenanceDatabase;
     QString serviceName;
+    ConnectionState lastTestState{ConnectionState::Untested};
+    QDateTime lastTestedAt;
 };
 
 struct ConnectionCredentials {

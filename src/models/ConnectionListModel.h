@@ -18,7 +18,9 @@ public:
         PortRole,
         AdministratorRole,
         MaintenanceDatabaseRole,
-        ServiceNameRole
+        ServiceNameRole,
+        ConnectionStateRole,
+        LastTestedAtRole
     };
     Q_ENUM(Role)
 
@@ -31,6 +33,7 @@ public:
     void replaceProfiles(QList<ConnectionProfile> profiles);
     void upsertProfile(ConnectionProfile profile);
     bool removeProfile(const QUuid &id);
+    void setTestResult(const QUuid &id, bool isOnline, const QDateTime &testedAt);
     [[nodiscard]] const ConnectionProfile *profile(const QUuid &id) const;
 
 private:

@@ -38,6 +38,10 @@ QVariant ConnectionListModel::data(const QModelIndex &index, int role) const
         return profile.maintenanceDatabase;
     case ServiceNameRole:
         return profile.serviceName;
+    case ConnectionStateRole:
+        return static_cast<int>(profile.lastTestState);
+    case LastTestedAtRole:
+        return profile.lastTestedAt;
     default:
         return {};
     }
@@ -45,14 +49,16 @@ QVariant ConnectionListModel::data(const QModelIndex &index, int role) const
 
 QHash<int, QByteArray> ConnectionListModel::roleNames() const
 {
-    return {{IdRole, "id"},
+    return {{IdRole, "connectionId"},
             {DisplayNameRole, "displayName"},
             {EngineRole, "engine"},
             {HostRole, "host"},
             {PortRole, "port"},
             {AdministratorRole, "administratorUser"},
             {MaintenanceDatabaseRole, "maintenanceDatabase"},
-            {ServiceNameRole, "serviceName"}};
+            {ServiceNameRole, "serviceName"},
+            {ConnectionStateRole, "connectionState"},
+            {LastTestedAtRole, "lastTestedAt"}};
 }
 
 void ConnectionListModel::replaceProfiles(QList<ConnectionProfile> profiles)
@@ -95,6 +101,22 @@ bool ConnectionListModel::removeProfile(const QUuid &id)
     }
 
     return false;
+}
+
+void ConnectionListModel::setTestResult(const QUuid &id, bool isOnline, const QDateTime &testedAt)
+{
+    for (qsizetype index = 0; index < m_profiles.size(); ++index) {
+        ConnectionProfile &profile = m_profiles[index];
+        if (profile.id != id) {
+            continue;
+        }
+
+        profile.lastTestState = isOnline ? ConnectionState::Online : ConnectionState::Offline;
+        profile.lastTestedAt = testedAt;
+        const QModelIndex modelIndex = this->index(index);
+        emit dataChanged(modelIndex, modelIndex, {ConnectionStateRole, LastTestedAtRole});
+        return;
+    }
 }
 
 const ConnectionProfile *ConnectionListModel::profile(const QUuid &id) const
