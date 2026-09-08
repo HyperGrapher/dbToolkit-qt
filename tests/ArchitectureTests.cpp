@@ -1,6 +1,7 @@
 #include "core/StaleResultGate.h"
 #include "core/CachedSnapshotStore.h"
 #include "models/ConnectionListModel.h"
+#include "models/RowTableModel.h"
 #include "models/TableListModel.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -67,4 +68,28 @@ TEST_CASE("Table model exposes schema-qualified identities", "[architecture]")
             "audit.users");
     model.clear();
     REQUIRE(model.rowCount() == 0);
+}
+
+TEST_CASE("Row table model preserves null, empty, and binary values", "[architecture]")
+{
+    dbtoolkit::TablePage page;
+    page.metadata.columns = {{.name = "optional"}, {.name = "label"}, {.name = "payload"}};
+    page.rows = {{{.kind = dbtoolkit::CellValueKind::Null, .displayText = "NULL", .fullText = "NULL"},
+                  {.kind = dbtoolkit::CellValueKind::Text,
+                   .displayText = "Empty string",
+                   .fullText = {}},
+                  {.kind = dbtoolkit::CellValueKind::Binary,
+                   .displayText = "Binary · 3 bytes",
+                   .fullText = "Binary · 3 bytes"}}};
+
+    dbtoolkit::RowTableModel model;
+    model.replacePage(page);
+
+    REQUIRE(model.rowCount() == 1);
+    REQUIRE(model.columnCount() == 3);
+    REQUIRE(model.headerData(2, Qt::Horizontal).toString() == "payload");
+    REQUIRE(model.data(model.index(0, 0), dbtoolkit::RowTableModel::ValueKindRole).toInt() == 1);
+    REQUIRE(model.data(model.index(0, 1), dbtoolkit::RowTableModel::DisplayTextRole).toString() ==
+            "Empty string");
+    REQUIRE(model.data(model.index(0, 2), dbtoolkit::RowTableModel::ValueKindRole).toInt() == 2);
 }

@@ -108,6 +108,7 @@ struct TableColumn {
     QString typeName;
     bool isNullable{true};
     bool isGenerated{false};
+    bool isBinary{false};
     int ordinal{0};
 };
 
@@ -117,6 +118,26 @@ struct TableMetadata {
     QString schemaName;
     QString tableName;
     QList<TableColumn> columns;
+};
+
+enum class CellValueKind {
+    Text,
+    Null,
+    Binary
+};
+
+struct TableCell {
+    CellValueKind kind{CellValueKind::Text};
+    QString displayText;
+    QString fullText;
+};
+
+struct TablePage {
+    TableMetadata metadata;
+    QList<QList<TableCell>> rows;
+    QStringList orderColumns;
+    bool hasStableOrder{false};
+    bool hasMoreRows{false};
 };
 
 struct RowIdentity {
@@ -157,5 +178,6 @@ Q_DECLARE_METATYPE(dbtoolkit::DatabaseSummary)
 Q_DECLARE_METATYPE(dbtoolkit::TableSummary)
 Q_DECLARE_METATYPE(dbtoolkit::CachedDatabaseSnapshot)
 Q_DECLARE_METATYPE(dbtoolkit::TableMetadata)
+Q_DECLARE_METATYPE(dbtoolkit::TablePage)
 Q_DECLARE_METATYPE(dbtoolkit::RowIdentity)
 Q_DECLARE_METATYPE(dbtoolkit::OperationResult)

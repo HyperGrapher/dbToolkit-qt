@@ -471,7 +471,7 @@ ApplicationWindow {
     Connections {
         target: typeof applicationController === "undefined" ? null : applicationController
         function onOperationCompleted(operation, succeeded, message, recoveryHint) {
-            if (operation !== "saveConnection" && operation !== "removeConnection" && operation !== "testConnection" && operation !== "startService" && operation !== "refreshDatabases" && operation !== "openDatabase" && operation !== "refreshTables") {
+            if (operation !== "saveConnection" && operation !== "removeConnection" && operation !== "testConnection" && operation !== "startService" && operation !== "refreshDatabases" && operation !== "openDatabase" && operation !== "refreshTables" && operation !== "openTable" && operation !== "refreshTable") {
                 return;
             }
             toast.text = succeeded ? message : message + (recoveryHint.length > 0 ? " " + recoveryHint : "");

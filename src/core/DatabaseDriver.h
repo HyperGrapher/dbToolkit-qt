@@ -17,6 +17,11 @@ struct TableListResult {
     QList<TableSummary> tables;
 };
 
+struct TablePageResult {
+    OperationResult operation;
+    TablePage page;
+};
+
 class DatabaseDriver {
 public:
     virtual ~DatabaseDriver() = default;
@@ -30,6 +35,10 @@ public:
     [[nodiscard]] virtual TableListResult listTables(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials,
         const QString &databaseName) const = 0;
+    [[nodiscard]] virtual TablePageResult loadTablePage(
+        const ConnectionProfile &profile, const ConnectionCredentials &credentials,
+        const QString &databaseName, const QString &schemaName,
+        const QString &tableName) const = 0;
 };
 
 class PostgreSqlDriver final : public DatabaseDriver {
@@ -43,6 +52,10 @@ public:
     [[nodiscard]] TableListResult listTables(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials,
         const QString &databaseName) const override;
+    [[nodiscard]] TablePageResult loadTablePage(
+        const ConnectionProfile &profile, const ConnectionCredentials &credentials,
+        const QString &databaseName, const QString &schemaName,
+        const QString &tableName) const override;
 };
 
 class MySqlDriver final : public DatabaseDriver {
@@ -58,6 +71,10 @@ public:
     [[nodiscard]] TableListResult listTables(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials,
         const QString &databaseName) const override;
+    [[nodiscard]] TablePageResult loadTablePage(
+        const ConnectionProfile &profile, const ConnectionCredentials &credentials,
+        const QString &databaseName, const QString &schemaName,
+        const QString &tableName) const override;
 
 private:
     DatabaseEngine m_engine;

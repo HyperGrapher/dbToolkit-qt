@@ -11,19 +11,15 @@ Item {
                                          applicationController.activeDatabaseName.length > 0
     readonly property var databasesModel: hasApplicationController ? applicationController.databasesModel : null
     readonly property var tablesModel: hasApplicationController ? applicationController.tablesModel : null
-    readonly property var rows: []
     readonly property string databaseName: hasSelection ? applicationController.activeDatabaseName : ""
     readonly property string serviceName: hasSelection ? applicationController.activeConnectionName : ""
     property string schemaName: ""
     property string tableName: ""
-    property int selectedRow: 1
-    property int selectedColumn: 1
+    property int selectedRow: -1
+    property int selectedColumn: -1
     property bool structure: false
-    readonly property var columns: []
-    readonly property var columnWidths: []
-    readonly property var displayedRows: []
-    readonly property var selectedRecord: displayedRows[Math.min(selectedRow, displayedRows.length - 1)]
-    readonly property string selectedValue: selectedRecord ? String([selectedRecord.id, selectedRecord.name, selectedRecord.email, selectedRecord.role, selectedRecord.status, selectedRecord.created][selectedColumn]) : "No cell selected"
+    property string selectedColumnName: ""
+    property string selectedValue: "No cell selected"
     signal actionRequested(string action)
 
     function selectDatabase(databaseName) {
@@ -32,8 +28,8 @@ Item {
         applicationController.openDatabase(databaseName);
         schemaName = "";
         tableName = "";
-        selectedRow = 0;
-        selectedColumn = 0;
+        selectedRow = -1;
+        selectedColumn = -1;
         structure = false;
     }
     ColumnLayout {
@@ -193,7 +189,11 @@ Item {
                             onClicked: {
                                 page.schemaName = tableButton.schemaName;
                                 page.tableName = tableButton.tableName;
-                                page.selectedRow = 0;
+                                page.selectedRow = -1;
+                                page.selectedColumn = -1;
+                                page.selectedColumnName = "";
+                                page.selectedValue = "No cell selected";
+                                applicationController.openTable(tableButton.schemaName, tableButton.tableName);
                             }
                             Accessible.name: qualifiedName
                             background: Rectangle {
@@ -325,86 +325,80 @@ Item {
                                 onClicked: page.actionRequested("Refresh")
                             }
                         }
-                        ScrollView {
+                        Item {
                             visible: !page.structure
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            clip: true
-                            contentWidth: 810
-                            contentHeight: rowColumn.height
-                            Column {
-                                id: rowColumn
-                                width: 810
-                                Row {
-                                    height: 36
-                                    Repeater {
-                                        model: page.columns
-                                        delegate: Rectangle {
-                                            id: columnHeader
-                                            required property int index
-                                            required property string modelData
-                                            width: page.columnWidths[index]
-                                            implicitHeight: 36
-                                            color: "#202630"
-                                            Text {
-                                                anchors.left: parent.left
-                                                anchors.leftMargin: 12
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                text: columnHeader.modelData + (columnHeader.index === 0 ? " ↑" : "")
-                                                color: Theme.muted
-                                                font.family: Theme.mono
-                                                font.pixelSize: 10
-                                            }
-                                        }
-                                    }
-                                }
-                                Repeater {
-                                    model: page.displayedRows
-                                    delegate: Row {
-                                        id: recordRow
-                                        required property int index
-                                        required property var modelData
-                                        Repeater {
-                                            model: [recordRow.modelData.id, recordRow.modelData.name, recordRow.modelData.email, recordRow.modelData.role, recordRow.modelData.status, recordRow.modelData.created]
-                                            delegate: Rectangle {
-                                                id: gridCell
-                                                required property int index
-                                                required property string modelData
-                                                width: page.columnWidths[index]
-                                                implicitHeight: 43
-                                                color: page.selectedRow === recordRow.index ? "#23324a" : recordRow.index % 2 ? "#1b2028" : Theme.panel
-                                                border.color: page.selectedRow === recordRow.index && page.selectedColumn === index ? "#6c94dc" : "transparent"
-                                                Text {
-                                                    anchors.left: parent.left
-                                                    anchors.leftMargin: 12
-                                                    anchors.verticalCenter: parent.verticalCenter
-                                                    text: gridCell.modelData
-                                                    color: gridCell.index === 4 ? (gridCell.modelData === "active" ? Theme.green : gridCell.modelData === "invited" ? Theme.amber : Theme.subtle) : gridCell.index === 0 ? Theme.subtle : Theme.muted
-                                                    font.pixelSize: 11
-                                                    font.family: gridCell.index === 1 ? "Segoe UI" : Theme.mono
-                                                }
-                                                TapHandler {
-                                                    onTapped: {
-                                                        page.selectedRow = recordRow.index;
-                                                        page.selectedColumn = gridCell.index;
-                                                    }
-                                                    onDoubleTapped: page.actionRequested("Edit cell")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                Item {
-                                    visible: page.displayedRows.length === 0
-                                    implicitWidth: 600
-                                    implicitHeight: 160
+                            HorizontalHeaderView {
+                                id: tableHeader
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                syncView: tableData
+                                delegate: Rectangle {
+                                    required property var display
+                                    implicitHeight: 36
+                                    color: "#202630"
                                     Text {
-                                        anchors.centerIn: parent
-                                        text: "No rows loaded"
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: 12
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: display
                                         color: Theme.muted
-                                        font.pixelSize: 12
+                                        font.family: Theme.mono
+                                        font.pixelSize: 10
                                     }
                                 }
+                            }
+                            TableView {
+                                id: tableData
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: tableHeader.bottom
+                                anchors.bottom: parent.bottom
+                                clip: true
+                                model: applicationController.tableDataModel
+                                columnSpacing: 1
+                                rowSpacing: 1
+                                columnWidthProvider: column => 180
+                                delegate: Rectangle {
+                                    required property int row
+                                    required property int column
+                                    required property string displayText
+                                    required property string fullText
+                                    required property int valueKind
+                                    implicitHeight: 43
+                                    color: page.selectedRow === row ? "#23324a" : row % 2 ? "#1b2028" : Theme.panel
+                                    border.color: page.selectedRow === row && page.selectedColumn === column ? Theme.accent : "transparent"
+                                    Text {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.leftMargin: 12
+                                        anchors.rightMargin: 10
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: displayText
+                                        color: valueKind === 1 ? Theme.amber : valueKind === 2 ? Theme.subtle : Theme.muted
+                                        font.pixelSize: 11
+                                        font.family: Theme.mono
+                                        elide: Text.ElideRight
+                                    }
+                                    TapHandler {
+                                        onTapped: {
+                                            page.selectedRow = row;
+                                            page.selectedColumn = column;
+                                            page.selectedColumnName = applicationController.tableDataModel.headerData(column, Qt.Horizontal);
+                                            page.selectedValue = fullText;
+                                        }
+                                        onDoubleTapped: page.actionRequested("Edit cell")
+                                    }
+                                }
+                            }
+                            Text {
+                                anchors.centerIn: parent
+                                visible: applicationController.loadedRowCount === 0
+                                text: applicationController.isBusy ? "Loading table data…" : page.tableName.length > 0 ? "This table has no rows" : "Choose a table"
+                                color: Theme.muted
+                                font.pixelSize: 12
                             }
                         }
                         ColumnLayout {
@@ -420,27 +414,30 @@ Item {
                                 font.letterSpacing: 1
                             }
                             Repeater {
-                                model: []
+                                model: applicationController.columnsModel
                                 delegate: RowLayout {
                                     id: columnDefinition
-                                    required property string modelData
+                                    required property string name
+                                    required property string typeName
+                                    required property bool nullable
+                                    required property bool generated
                                     Layout.fillWidth: true
                                     Text {
-                                        text: columnDefinition.modelData.split("|")[0]
+                                        text: columnDefinition.name
                                         color: Theme.text
                                         font.family: Theme.mono
                                         font.pixelSize: 12
                                         Layout.fillWidth: true
                                     }
                                     Text {
-                                        text: columnDefinition.modelData.split("|")[1]
+                                        text: columnDefinition.typeName
                                         color: Theme.accent
                                         font.family: Theme.mono
                                         font.pixelSize: 11
                                         Layout.preferredWidth: 145
                                     }
                                     Text {
-                                        text: columnDefinition.modelData.split("|")[2]
+                                        text: columnDefinition.generated ? "Generated" : columnDefinition.nullable ? "Nullable" : "Required"
                                         color: Theme.muted
                                         font.pixelSize: 11
                                         Layout.preferredWidth: 110
@@ -448,7 +445,7 @@ Item {
                                 }
                             }
                             Text {
-                                text: "Select a table to view its columns."
+                                text: applicationController.isBusy ? "Loading column definitions…" : "Select a table to view its columns."
                                 color: Theme.muted
                                 font.pixelSize: 12
                             }
@@ -465,7 +462,7 @@ Item {
                             Layout.fillWidth: true
                             Layout.margins: 12
                             Text {
-                                text: page.displayedRows.length + " rows"
+                                text: applicationController.loadedRowCount + " rows"
                                 color: Theme.subtle
                                 font.pixelSize: 10
                             }
@@ -473,7 +470,11 @@ Item {
                                 Layout.fillWidth: true
                             }
                             Text {
-                                text: "100 per page   ·   Page 1 of 1"
+                                text: applicationController.hasMoreRows
+                                      ? "First 100 rows"
+                                      : applicationController.hasStableRowOrder
+                                        ? "Stable key order"
+                                        : "No stable key"
                                 color: Theme.subtle
                                 font.pixelSize: 10
                             }
@@ -498,7 +499,7 @@ Item {
                                 font.letterSpacing: 1
                             }
                             Tag {
-                                text: page.columns[page.selectedColumn]
+                                text: page.selectedColumnName
                                 tone: Theme.accent
                             }
                             Item {

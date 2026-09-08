@@ -5,7 +5,9 @@
 #include <pqxx/pqxx>
 #endif
 
+#include <algorithm>
 #include <array>
+#include <iterator>
 #include <memory>
 
 namespace dbtoolkit {
@@ -67,6 +69,80 @@ DatabaseListResult unavailableDatabaseList()
 TableListResult unavailableTableList()
 {
     return {.operation = driversUnavailableResult()};
+}
+
+TablePageResult unavailableTablePage()
+{
+    return {.operation = driversUnavailableResult()};
+}
+
+TableCell textCell(const QByteArray &bytes, bool isBinary)
+{
+    if (isBinary) {
+        const QString description = QString("Binary · %1 bytes").arg(bytes.size());
+        return {.kind = CellValueKind::Binary,
+                .displayText = description,
+                .fullText = description};
+    }
+
+    const QString value = QString::fromUtf8(bytes);
+    if (value.isEmpty()) {
+        return {.kind = CellValueKind::Text, .displayText = "Empty string", .fullText = {}};
+    }
+
+    QString display = value;
+    display.replace('\r', " ");
+    display.replace('\n', " ");
+    if (display.size() > 240) {
+        display = display.left(239) + "…";
+    }
+    return {.kind = CellValueKind::Text, .displayText = display, .fullText = value};
+}
+
+TableCell nullCell()
+{
+    return {.kind = CellValueKind::Null, .displayText = "NULL", .fullText = "NULL"};
+}
+
+struct KeyCandidate {
+    QString name;
+    bool isPrimary{false};
+    QStringList columns;
+};
+
+bool columnIsNonNullable(const QList<TableColumn> &columns, const QString &name)
+{
+    for (const TableColumn &column : columns) {
+        if (column.name == name) {
+            return !column.isNullable;
+        }
+    }
+    return false;
+}
+
+QStringList chooseStableKey(const QList<KeyCandidate> &candidates,
+                            const QList<TableColumn> &columns)
+{
+    for (const KeyCandidate &candidate : candidates) {
+        bool allNonNullable = !candidate.columns.isEmpty();
+        for (const QString &columnName : candidate.columns) {
+            if (!columnIsNonNullable(columns, columnName)) {
+                allNonNullable = false;
+                break;
+            }
+        }
+        if (candidate.isPrimary || allNonNullable) {
+            return candidate.columns;
+        }
+    }
+    return {};
+}
+
+QString quoteMySqlIdentifier(const QString &identifier)
+{
+    QString escaped = identifier;
+    escaped.replace('`', "``");
+    return '`' + escaped + '`';
 }
 
 } // namespace
@@ -178,6 +254,121 @@ TableListResult PostgreSqlDriver::listTables(
     Q_UNUSED(credentials)
     Q_UNUSED(databaseName)
     return unavailableTableList();
+#endif
+}
+
+TablePageResult PostgreSqlDriver::loadTablePage(
+    const ConnectionProfile &profile, const ConnectionCredentials &credentials,
+    const QString &databaseName, const QString &schemaName, const QString &tableName) const
+{
+#ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
+    try {
+        pqxx::connection connection{
+            postgreSqlConnectionString(profile, credentials, databaseName).toStdString()};
+        pqxx::read_transaction transaction{connection};
+        const std::string schema = schemaName.toUtf8().toStdString();
+        const std::string table = tableName.toUtf8().toStdString();
+        const pqxx::result columnRows = transaction.exec_params(
+            "SELECT column_name, data_type, udt_name, is_nullable = 'YES', "
+            "is_generated <> 'NEVER', ordinal_position "
+            "FROM information_schema.columns "
+            "WHERE table_schema = $1 AND table_name = $2 ORDER BY ordinal_position",
+            schema, table);
+        if (columnRows.empty()) {
+            return {.operation = OperationResult::failure(
+                        "The selected PostgreSQL table no longer exists.",
+                        "Refresh the table list and choose an available table.")};
+        }
+
+        TablePage page;
+        page.metadata.connectionId = profile.id;
+        page.metadata.databaseName = databaseName;
+        page.metadata.schemaName = schemaName;
+        page.metadata.tableName = tableName;
+        for (const auto &row : columnRows) {
+            TableColumn column;
+            column.name = QString::fromUtf8(row[0].c_str());
+            column.typeName = QString::fromUtf8(row[1].c_str());
+            column.isNullable = row[3].as<bool>();
+            column.isGenerated = row[4].as<bool>();
+            column.isBinary = QString::fromUtf8(row[2].c_str()) == "bytea";
+            column.ordinal = row[5].as<int>();
+            page.metadata.columns.append(std::move(column));
+        }
+
+        const pqxx::result keyRows = transaction.exec_params(
+            "SELECT tc.constraint_name, tc.constraint_type, kcu.column_name, "
+            "kcu.ordinal_position "
+            "FROM information_schema.table_constraints AS tc "
+            "JOIN information_schema.key_column_usage AS kcu "
+            "ON tc.constraint_catalog = kcu.constraint_catalog "
+            "AND tc.constraint_schema = kcu.constraint_schema "
+            "AND tc.constraint_name = kcu.constraint_name "
+            "WHERE tc.table_schema = $1 AND tc.table_name = $2 "
+            "AND tc.constraint_type IN ('PRIMARY KEY', 'UNIQUE') "
+            "ORDER BY CASE WHEN tc.constraint_type = 'PRIMARY KEY' THEN 0 ELSE 1 END, "
+            "tc.constraint_name, kcu.ordinal_position",
+            schema, table);
+        QList<KeyCandidate> candidates;
+        for (const auto &row : keyRows) {
+            const QString constraintName = QString::fromUtf8(row[0].c_str());
+            if (candidates.isEmpty() || candidates.last().name != constraintName) {
+                candidates.append({.name = constraintName,
+                                   .isPrimary = QString::fromUtf8(row[1].c_str()) == "PRIMARY KEY"});
+            }
+            candidates.last().columns.append(QString::fromUtf8(row[2].c_str()));
+        }
+        page.orderColumns = chooseStableKey(candidates, page.metadata.columns);
+        page.hasStableOrder = !page.orderColumns.isEmpty();
+
+        std::string query = "SELECT * FROM " + transaction.quote_name(schema) + "." +
+                            transaction.quote_name(table);
+        if (page.hasStableOrder) {
+            query += " ORDER BY ";
+            for (qsizetype index = 0; index < page.orderColumns.size(); ++index) {
+                if (index > 0) {
+                    query += ", ";
+                }
+                query += transaction.quote_name(page.orderColumns.at(index).toUtf8().toStdString());
+            }
+        }
+        query += " LIMIT 101";
+        const pqxx::result dataRows = transaction.exec(query);
+        for (const auto &row : dataRows) {
+            QList<TableCell> cells;
+            cells.reserve(page.metadata.columns.size());
+            for (qsizetype columnIndex = 0; columnIndex < page.metadata.columns.size();
+                 ++columnIndex) {
+                const auto field = row[static_cast<pqxx::row::size_type>(columnIndex)];
+                if (field.is_null()) {
+                    cells.append(nullCell());
+                    continue;
+                }
+                const std::string_view value = field.view();
+                cells.append(textCell(QByteArray(value.data(), static_cast<qsizetype>(value.size())),
+                                      page.metadata.columns.at(columnIndex).isBinary));
+            }
+            page.rows.append(std::move(cells));
+        }
+        page.hasMoreRows = page.rows.size() > 100;
+        if (page.hasMoreRows) {
+            page.rows.removeLast();
+        }
+        transaction.commit();
+        return {.operation = OperationResult::success("Loaded the first table page."),
+                .page = std::move(page)};
+    } catch (const std::exception &error) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(error.what()),
+                    "Refresh the table list and check the account's read privileges.")};
+    }
+#else
+    Q_UNUSED(profile)
+    Q_UNUSED(credentials)
+    Q_UNUSED(databaseName)
+    Q_UNUSED(schemaName)
+    Q_UNUSED(tableName)
+    return unavailableTablePage();
 #endif
 }
 
@@ -339,6 +530,161 @@ TableListResult MySqlDriver::listTables(
     Q_UNUSED(credentials)
     Q_UNUSED(databaseName)
     return unavailableTableList();
+#endif
+}
+
+TablePageResult MySqlDriver::loadTablePage(
+    const ConnectionProfile &profile, const ConnectionCredentials &credentials,
+    const QString &databaseName, const QString &schemaName, const QString &tableName) const
+{
+#ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
+    MYSQL *rawConnection = mysql_init(nullptr);
+    if (rawConnection == nullptr) {
+        return {.operation = OperationResult::failure("Could not initialize the MySQL client library.")};
+    }
+    const std::unique_ptr<MYSQL, decltype(&mysql_close)> connection(rawConnection, mysql_close);
+    const QByteArray host = profile.host.toUtf8();
+    const QByteArray user = profile.administratorUser.toUtf8();
+    const QByteArray password = credentials.administratorPassword.toUtf8();
+    const QByteArray database = databaseName.toUtf8();
+    const unsigned int port = profile.port == 0 ? 3306 : profile.port;
+    if (mysql_real_connect(connection.get(), host.constData(), user.constData(), password.constData(),
+                           database.constData(), port, nullptr, 0) == nullptr) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(mysql_error(connection.get())),
+                    "Check that the database exists and the account can connect to it.")};
+    }
+    mysql_set_character_set(connection.get(), "utf8mb4");
+
+    const QString quotedTable = quoteMySqlIdentifier(tableName);
+    const QByteArray columnQuery = ("SHOW FULL COLUMNS FROM " + quotedTable).toUtf8();
+    if (mysql_query(connection.get(), columnQuery.constData()) != 0) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(mysql_error(connection.get())),
+                    "Refresh the table list and check the account's metadata privileges.")};
+    }
+    std::unique_ptr<MYSQL_RES, decltype(&mysql_free_result)> columnRows(
+        mysql_store_result(connection.get()), mysql_free_result);
+    if (!columnRows) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(mysql_error(connection.get())),
+                    "The server did not return column metadata.")};
+    }
+
+    TablePage page;
+    page.metadata.connectionId = profile.id;
+    page.metadata.databaseName = databaseName;
+    page.metadata.schemaName = schemaName;
+    page.metadata.tableName = tableName;
+    int ordinal = 1;
+    while (MYSQL_ROW row = mysql_fetch_row(columnRows.get())) {
+        TableColumn column;
+        column.name = QString::fromUtf8(row[0]);
+        column.typeName = QString::fromUtf8(row[1]);
+        column.isNullable = QString::fromUtf8(row[3]) == "YES";
+        column.isGenerated = row[6] != nullptr &&
+                             QString::fromUtf8(row[6]).contains("GENERATED", Qt::CaseInsensitive);
+        const QString loweredType = column.typeName.toLower();
+        column.isBinary = loweredType.startsWith("binary") || loweredType.startsWith("varbinary") ||
+                          loweredType.contains("blob");
+        column.ordinal = ordinal++;
+        page.metadata.columns.append(std::move(column));
+    }
+    if (page.metadata.columns.isEmpty()) {
+        return {.operation = OperationResult::failure(
+                    "The selected MySQL/MariaDB table no longer exists.",
+                    "Refresh the table list and choose an available table.")};
+    }
+    columnRows.reset();
+
+    const QByteArray keyQuery = ("SHOW INDEX FROM " + quotedTable).toUtf8();
+    if (mysql_query(connection.get(), keyQuery.constData()) != 0) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(mysql_error(connection.get())),
+                    "The table is readable but its index metadata could not be loaded.")};
+    }
+    std::unique_ptr<MYSQL_RES, decltype(&mysql_free_result)> keyRows(
+        mysql_store_result(connection.get()), mysql_free_result);
+    QList<KeyCandidate> candidates;
+    if (keyRows) {
+        while (MYSQL_ROW row = mysql_fetch_row(keyRows.get())) {
+            if (row[1] == nullptr || QString::fromUtf8(row[1]) != "0" || row[2] == nullptr ||
+                row[4] == nullptr) {
+                continue;
+            }
+            const QString keyName = QString::fromUtf8(row[2]);
+            auto candidate = std::find_if(candidates.begin(), candidates.end(),
+                                          [&keyName](const KeyCandidate &item) {
+                                              return item.name == keyName;
+                                          });
+            if (candidate == candidates.end()) {
+                candidates.append({.name = keyName, .isPrimary = keyName == "PRIMARY"});
+                candidate = std::prev(candidates.end());
+            }
+            candidate->columns.append(QString::fromUtf8(row[4]));
+        }
+    }
+    std::stable_sort(candidates.begin(), candidates.end(),
+                     [](const KeyCandidate &left, const KeyCandidate &right) {
+                         if (left.isPrimary != right.isPrimary) {
+                             return left.isPrimary;
+                         }
+                         return left.columns.size() < right.columns.size();
+                     });
+    page.orderColumns = chooseStableKey(candidates, page.metadata.columns);
+    page.hasStableOrder = !page.orderColumns.isEmpty();
+    keyRows.reset();
+
+    QString dataQuery = "SELECT * FROM " + quotedTable;
+    if (page.hasStableOrder) {
+        QStringList quotedColumns;
+        for (const QString &columnName : page.orderColumns) {
+            quotedColumns.append(quoteMySqlIdentifier(columnName));
+        }
+        dataQuery += " ORDER BY " + quotedColumns.join(", ");
+    }
+    dataQuery += " LIMIT 101";
+    const QByteArray encodedDataQuery = dataQuery.toUtf8();
+    if (mysql_query(connection.get(), encodedDataQuery.constData()) != 0) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(mysql_error(connection.get())),
+                    "The metadata loaded, but the table rows could not be read.")};
+    }
+    const std::unique_ptr<MYSQL_RES, decltype(&mysql_free_result)> dataRows(
+        mysql_store_result(connection.get()), mysql_free_result);
+    if (!dataRows) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(mysql_error(connection.get())),
+                    "The server did not return table rows.")};
+    }
+    while (MYSQL_ROW row = mysql_fetch_row(dataRows.get())) {
+        const unsigned long *lengths = mysql_fetch_lengths(dataRows.get());
+        QList<TableCell> cells;
+        cells.reserve(page.metadata.columns.size());
+        for (qsizetype columnIndex = 0; columnIndex < page.metadata.columns.size(); ++columnIndex) {
+            if (row[columnIndex] == nullptr) {
+                cells.append(nullCell());
+                continue;
+            }
+            cells.append(textCell(
+                QByteArray(row[columnIndex], static_cast<qsizetype>(lengths[columnIndex])),
+                page.metadata.columns.at(columnIndex).isBinary));
+        }
+        page.rows.append(std::move(cells));
+    }
+    page.hasMoreRows = page.rows.size() > 100;
+    if (page.hasMoreRows) {
+        page.rows.removeLast();
+    }
+    return {.operation = OperationResult::success("Loaded the first table page."),
+            .page = std::move(page)};
+#else
+    Q_UNUSED(profile)
+    Q_UNUSED(credentials)
+    Q_UNUSED(databaseName)
+    Q_UNUSED(schemaName)
+    Q_UNUSED(tableName)
+    return unavailableTablePage();
 #endif
 }
 

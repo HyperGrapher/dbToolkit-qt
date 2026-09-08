@@ -18,6 +18,8 @@ ApplicationController::ApplicationController(QObject *parent)
     , m_services(this)
     , m_databases(this)
     , m_tables(this)
+    , m_columns(this)
+    , m_tableData(this)
     , m_resultGate(this)
     , m_serviceResultGate(this)
 {
@@ -43,6 +45,16 @@ QObject *ApplicationController::databasesModel()
 QObject *ApplicationController::tablesModel()
 {
     return &m_tables;
+}
+
+QObject *ApplicationController::columnsModel()
+{
+    return &m_columns;
+}
+
+QObject *ApplicationController::tableDataModel()
+{
+    return &m_tableData;
 }
 
 QString ApplicationController::activeConnectionId() const
@@ -78,6 +90,31 @@ int ApplicationController::tableCount() const
     return m_tables.rowCount();
 }
 
+QString ApplicationController::activeSchemaName() const
+{
+    return m_activeSchemaName;
+}
+
+QString ApplicationController::activeTableName() const
+{
+    return m_activeTableName;
+}
+
+int ApplicationController::loadedRowCount() const
+{
+    return m_tableData.rowCount();
+}
+
+bool ApplicationController::hasMoreRows() const
+{
+    return m_hasMoreRows;
+}
+
+bool ApplicationController::hasStableRowOrder() const
+{
+    return m_hasStableRowOrder;
+}
+
 bool ApplicationController::isBusy() const
 {
     return m_isBusy;
@@ -110,6 +147,7 @@ void ApplicationController::setActiveConnectionId(const QString &connectionId)
     m_activeDatabaseName.clear();
     m_databases.clear();
     m_tables.clear();
+    clearActiveTable();
     emit activeConnectionChanged();
     emit activeDatabaseChanged();
     emit tablesChanged();
@@ -124,6 +162,7 @@ void ApplicationController::setActiveDatabaseName(const QString &databaseName)
     setBusy(false);
     m_activeDatabaseName = databaseName;
     m_tables.clear();
+    clearActiveTable();
     emit activeDatabaseChanged();
     emit tablesChanged();
 }
@@ -355,6 +394,7 @@ void ApplicationController::refreshActiveTables()
         m_tables.clear();
         emit tablesChanged();
     }
+    clearActiveTable();
     const quint64 token = m_resultGate.beginWork();
     setBusy(true);
     QPointer<ApplicationController> controller(this);
@@ -384,6 +424,99 @@ void ApplicationController::refreshActiveTables()
                     emit controller->operationCompleted(
                         "refreshTables", result.operation.isSuccess(), result.operation.message,
                         result.operation.recoveryHint);
+                },
+                Qt::QueuedConnection);
+        });
+}
+
+bool ApplicationController::openTable(const QString &schemaName, const QString &tableName)
+{
+    if (m_activeDatabaseName.isEmpty() || schemaName.isEmpty() || tableName.isEmpty()) {
+        emit operationCompleted("openTable", false, "Choose a database and table first.", {});
+        return false;
+    }
+
+    bool isKnownTable = false;
+    for (int row = 0; row < m_tables.rowCount(); ++row) {
+        const QModelIndex index = m_tables.index(row);
+        if (m_tables.data(index, TableListModel::SchemaNameRole).toString() == schemaName &&
+            m_tables.data(index, TableListModel::TableNameRole).toString() == tableName) {
+            isKnownTable = true;
+            break;
+        }
+    }
+    if (!isKnownTable) {
+        emit operationCompleted("openTable", false,
+                                "Refresh the table list and choose an available table.", {});
+        return false;
+    }
+
+    m_resultGate.invalidate();
+    setBusy(false);
+    m_activeSchemaName = schemaName;
+    m_activeTableName = tableName;
+    clearTableData();
+    emit activeTableChanged();
+    refreshActiveTable();
+    return true;
+}
+
+void ApplicationController::refreshActiveTable()
+{
+    const ConnectionProfile *profile = activeProfile();
+    if (profile == nullptr || m_activeDatabaseName.isEmpty() || m_activeSchemaName.isEmpty() ||
+        m_activeTableName.isEmpty()) {
+        emit operationCompleted("refreshTable", false,
+                                "Choose a connection, database, and table before loading rows.", {});
+        return;
+    }
+
+    const ConnectionProfile profileCopy = *profile;
+    const QString databaseName = m_activeDatabaseName;
+    const QString schemaName = m_activeSchemaName;
+    const QString tableName = m_activeTableName;
+    ConnectionCredentials credentials = m_sessionCredentials.credentialsFor(profileCopy.id);
+    if (credentials.administratorPassword.isEmpty()) {
+        emit operationCompleted("refreshTable", false,
+                                "Enter an administrator password before loading table rows.", {});
+        return;
+    }
+
+    const quint64 token = m_resultGate.beginWork();
+    setBusy(true);
+    QPointer<ApplicationController> controller(this);
+    QThreadPool::globalInstance()->start(
+        [controller, token, profileCopy, databaseName, schemaName, tableName,
+         credentials = std::move(credentials)]() mutable {
+            const auto driver = createDatabaseDriver(profileCopy.engine);
+            TablePageResult result = driver->loadTablePage(profileCopy, credentials, databaseName,
+                                                            schemaName, tableName);
+            credentials.administratorPassword.fill(u'\0');
+            credentials.administratorPassword.clear();
+            if (controller.isNull()) {
+                return;
+            }
+            QMetaObject::invokeMethod(
+                controller.data(),
+                [controller, token, profileId = profileCopy.id, databaseName, schemaName, tableName,
+                 result = std::move(result)]() mutable {
+                    if (controller.isNull() || !controller->m_resultGate.isCurrent(token) ||
+                        controller->m_activeConnectionId != profileId ||
+                        controller->m_activeDatabaseName != databaseName ||
+                        controller->m_activeSchemaName != schemaName ||
+                        controller->m_activeTableName != tableName) {
+                        return;
+                    }
+                    controller->setBusy(false);
+                    if (result.operation.isSuccess()) {
+                        controller->m_columns.replaceColumns(result.page.metadata.columns);
+                        controller->m_hasMoreRows = result.page.hasMoreRows;
+                        controller->m_hasStableRowOrder = result.page.hasStableOrder;
+                        controller->m_tableData.replacePage(std::move(result.page));
+                        emit controller->tableDataChanged();
+                    }
+                    emit controller->operationCompleted("refreshTable", result.operation.isSuccess(),
+                                                        result.operation.message, result.operation.recoveryHint);
                 },
                 Qt::QueuedConnection);
         });
@@ -458,6 +591,23 @@ void ApplicationController::setScanningServices(bool isScanning)
     }
     m_isScanningServices = isScanning;
     emit scanningServicesChanged();
+}
+
+void ApplicationController::clearActiveTable()
+{
+    m_activeSchemaName.clear();
+    m_activeTableName.clear();
+    clearTableData();
+    emit activeTableChanged();
+}
+
+void ApplicationController::clearTableData()
+{
+    m_columns.clear();
+    m_tableData.clear();
+    m_hasMoreRows = false;
+    m_hasStableRowOrder = false;
+    emit tableDataChanged();
 }
 
 } // namespace dbtoolkit

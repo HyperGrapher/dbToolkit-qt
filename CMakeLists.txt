@@ -36,12 +36,16 @@ add_library(DbToolKitCore STATIC
     src/core/StaleResultGate.h
     src/models/ConnectionListModel.cpp
     src/models/ConnectionListModel.h
+    src/models/ColumnListModel.cpp
+    src/models/ColumnListModel.h
     src/models/DatabaseListModel.cpp
     src/models/DatabaseListModel.h
     src/models/ServiceListModel.cpp
     src/models/ServiceListModel.h
     src/models/TableListModel.cpp
     src/models/TableListModel.h
+    src/models/RowTableModel.cpp
+    src/models/RowTableModel.h
     src/services/WindowsDatabaseService.cpp
     src/services/WindowsDatabaseService.h
     src/controllers/ApplicationController.cpp
