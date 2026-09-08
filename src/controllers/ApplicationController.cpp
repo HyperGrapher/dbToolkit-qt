@@ -173,6 +173,9 @@ void ApplicationController::testActiveConnection()
             controller->m_connections.setTestResult(profileId, result.isSuccess(), QDateTime::currentDateTime());
             controller->operationCompleted("testConnection", result.isSuccess(), result.message,
                                            result.recoveryHint);
+            if (result.isSuccess()) {
+                controller->refreshActiveDatabases();
+            }
         }, Qt::QueuedConnection);
     });
 }
@@ -181,6 +184,54 @@ void ApplicationController::cancelActiveWork()
 {
     m_resultGate.invalidate();
     setBusy(false);
+}
+
+void ApplicationController::refreshActiveDatabases()
+{
+    const ConnectionProfile *profile = activeProfile();
+    if (profile == nullptr) {
+        emit operationCompleted("refreshDatabases", false, "Choose a saved connection first.", {});
+        return;
+    }
+
+    const ConnectionProfile profileCopy = *profile;
+    ConnectionCredentials credentials = m_sessionCredentials.credentialsFor(profileCopy.id);
+    if (credentials.administratorPassword.isEmpty()) {
+        emit operationCompleted("refreshDatabases", false,
+                                "Enter an administrator password before loading databases.", {});
+        return;
+    }
+    const quint64 token = m_resultGate.beginWork();
+    setBusy(true);
+    QPointer<ApplicationController> controller(this);
+    QThreadPool::globalInstance()->start([controller, token, profileCopy, credentials = std::move(credentials)]() mutable {
+        const auto driver = createDatabaseDriver(profileCopy.engine);
+        DatabaseListResult result = driver->listDatabases(profileCopy, credentials);
+        credentials.administratorPassword.fill(u'\0');
+        credentials.administratorPassword.clear();
+        if (controller.isNull()) {
+            return;
+        }
+        QMetaObject::invokeMethod(controller.data(), [controller, token, profileId = profileCopy.id,
+                                                       result = std::move(result)]() mutable {
+            if (controller.isNull() || !controller->m_resultGate.isCurrent(token) ||
+                controller->m_activeConnectionId != profileId) {
+                return;
+            }
+            controller->setBusy(false);
+            if (result.operation.isSuccess()) {
+                CachedDatabaseSnapshot snapshot;
+                snapshot.connectionId = profileId;
+                snapshot.databases = result.databases;
+                snapshot.refreshedAt = QDateTime::currentDateTime();
+                snapshot.serverVersion = result.serverVersion;
+                controller->m_snapshotStore.replace(std::move(snapshot));
+                controller->m_databases.replaceDatabases(std::move(result.databases));
+            }
+            controller->operationCompleted("refreshDatabases", result.operation.isSuccess(),
+                                           result.operation.message, result.operation.recoveryHint);
+        }, Qt::QueuedConnection);
+    });
 }
 
 void ApplicationController::refreshServices()

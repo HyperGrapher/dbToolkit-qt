@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/DomainTypes.h"
+#include "core/CachedSnapshotStore.h"
 #include "core/SessionCredentialStore.h"
 #include "core/StaleResultGate.h"
 #include "models/ConnectionListModel.h"
@@ -43,6 +44,7 @@ public:
     Q_INVOKABLE void removeActiveConnection();
     Q_INVOKABLE void testActiveConnection();
     Q_INVOKABLE void cancelActiveWork();
+    Q_INVOKABLE void refreshActiveDatabases();
     Q_INVOKABLE void refreshServices();
     Q_INVOKABLE void startService(const QString &serviceName);
 
@@ -63,6 +65,7 @@ private:
     ServiceListModel m_services;
     DatabaseListModel m_databases;
     SessionCredentialStore m_sessionCredentials;
+    CachedSnapshotStore m_snapshotStore;
     StaleResultGate m_resultGate;
     StaleResultGate m_serviceResultGate;
     QUuid m_activeConnectionId;

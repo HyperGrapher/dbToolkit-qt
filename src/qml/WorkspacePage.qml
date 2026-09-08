@@ -9,7 +9,7 @@ Item {
     property int databaseIndex: 0
     readonly property bool hasApplicationController: typeof applicationController !== "undefined"
     readonly property var servicesModel: hasApplicationController ? applicationController.servicesModel : null
-    readonly property var databases: []
+    readonly property var databasesModel: hasApplicationController ? applicationController.databasesModel : null
     property string selectedServiceName: ""
     property string selectedServiceDisplayName: ""
     property int selectedServiceEngine: 0
@@ -25,7 +25,7 @@ Item {
         databases: 0,
         version: ""
     }) : null
-    readonly property var database: databases[databaseIndex] || null
+    readonly property var database: null
     readonly property bool hasSelection: service !== null && database !== null
     readonly property bool offline: service === null || !service.running
     property bool managedOnly: false
@@ -178,7 +178,7 @@ Item {
                 font.pixelSize: 15
             }
             Tag {
-                text: page.service ? String(page.service.databases) : "0"
+                text: String(databaseList.count)
                 tone: Theme.muted
             }
             Tag {
@@ -201,7 +201,7 @@ Item {
                 implicitHeight: 26
                 hint: "Refresh databases"
                 enabled: !page.offline
-                onClicked: page.actionRequested("Refresh")
+                onClicked: applicationController.refreshActiveDatabases()
             }
         }
         RowLayout {
@@ -273,18 +273,20 @@ Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
-                        model: page.service ? page.databases.slice(0, page.service.databases).filter(d => (!page.managedOnly || d.managed) && d.name.toLowerCase().includes(search.text.toLowerCase())) : []
+                        model: page.databasesModel
                         ScrollBar.vertical: ScrollBar {}
                         delegate: AbstractButton {
                             id: databaseRow
-                            required property var modelData
+                            required property string name
+                            required property string owner
+                            required property string size
+                            required property int tableCount
+                            required property bool isManaged
                             width: ListView.view.width
                             implicitHeight: 66
                             hoverEnabled: true
-                            readonly property bool selected: modelData.name === page.database.name
-                            Accessible.name: modelData.name
-                            onClicked: page.databaseIndex = page.databases.findIndex(d => d.name === modelData.name)
-                            onDoubleClicked: page.browseRequested()
+                            readonly property bool selected: false
+                            Accessible.name: databaseRow.name
                             background: Rectangle {
                                 color: databaseRow.selected ? "#202d43" : databaseRow.hovered ? Theme.raised : "transparent"
                                 Rectangle {
@@ -315,14 +317,14 @@ Item {
                                         anchors.centerIn: parent
                                         implicitWidth: 18
                                         implicitHeight: 18
-                                        ink: databaseRow.modelData.color
+                                        ink: Theme.accent
                                     }
                                 }
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 5
                                     Text {
-                                        text: databaseRow.modelData.name
+                                        text: databaseRow.name
                                         color: databaseRow.selected ? "#b9cfff" : Theme.text
                                         font.pixelSize: 12
                                         font.weight: Font.Medium
@@ -330,7 +332,7 @@ Item {
                                         Layout.fillWidth: true
                                     }
                                     Text {
-                                        text: databaseRow.modelData.managed ? databaseRow.modelData.owner : "Existing database"
+                                        text: databaseRow.owner.length > 0 ? databaseRow.owner : "Existing database"
                                         color: Theme.subtle
                                         font.pixelSize: 10
                                         elide: Text.ElideRight
@@ -338,14 +340,14 @@ Item {
                                     }
                                 }
                                 Text {
-                                    text: databaseRow.modelData.size
+                                    text: databaseRow.size
                                     color: Theme.muted
                                     font.family: Theme.mono
                                     font.pixelSize: 10
                                     Layout.preferredWidth: 80
                                 }
                                 Text {
-                                    text: databaseRow.modelData.tables
+                                    text: databaseRow.tableCount < 0 ? "—" : databaseRow.tableCount
                                     color: Theme.muted
                                     font.family: Theme.mono
                                     font.pixelSize: 10
@@ -355,8 +357,8 @@ Item {
                                     Layout.preferredWidth: 75
                                     implicitHeight: 24
                                     Tag {
-                                        text: databaseRow.modelData.managed ? "Managed" : "Existing"
-                                        tone: databaseRow.modelData.managed ? Theme.accent : Theme.subtle
+                                        text: databaseRow.isManaged ? "Managed" : "Existing"
+                                        tone: databaseRow.isManaged ? Theme.accent : Theme.subtle
                                     }
                                 }
                             }

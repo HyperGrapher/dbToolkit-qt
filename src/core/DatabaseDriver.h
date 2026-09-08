@@ -6,6 +6,12 @@
 
 namespace dbtoolkit {
 
+struct DatabaseListResult {
+    OperationResult operation;
+    QList<DatabaseSummary> databases;
+    QString serverVersion;
+};
+
 class DatabaseDriver {
 public:
     virtual ~DatabaseDriver() = default;
@@ -14,6 +20,8 @@ public:
     [[nodiscard]] virtual DatabaseCapabilities capabilities() const = 0;
     [[nodiscard]] virtual OperationResult testConnection(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials) const = 0;
+    [[nodiscard]] virtual DatabaseListResult listDatabases(
+        const ConnectionProfile &profile, const ConnectionCredentials &credentials) const = 0;
 };
 
 class PostgreSqlDriver final : public DatabaseDriver {
@@ -21,6 +29,8 @@ public:
     [[nodiscard]] DatabaseEngine engine() const override;
     [[nodiscard]] DatabaseCapabilities capabilities() const override;
     [[nodiscard]] OperationResult testConnection(
+        const ConnectionProfile &profile, const ConnectionCredentials &credentials) const override;
+    [[nodiscard]] DatabaseListResult listDatabases(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials) const override;
 };
 
@@ -31,6 +41,8 @@ public:
     [[nodiscard]] DatabaseEngine engine() const override;
     [[nodiscard]] DatabaseCapabilities capabilities() const override;
     [[nodiscard]] OperationResult testConnection(
+        const ConnectionProfile &profile, const ConnectionCredentials &credentials) const override;
+    [[nodiscard]] DatabaseListResult listDatabases(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials) const override;
 
 private:
