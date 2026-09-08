@@ -14,9 +14,11 @@ Popup {
     property string suggestedConnectionName: ""
     property int suggestedPort: 5432
     property string selectedServiceName: ""
+    property string editingConnectionId: ""
     signal actionRequested(string action)
     signal previewSubmitted(string action)
-    signal connectionSubmitted(string displayName, int engine, string host, int port, string username, string password, string maintenanceDatabase, string serviceName)
+    signal connectionSubmitted(string displayName, int engine, string host, int port, string username, string password, string maintenanceDatabase, string serviceName, string connectionId)
+    signal connectionRemovalRequested(string connectionId)
     readonly property bool destructive: ["Delete database", "Recreate database", "Empty database", "Delete row", "Empty table", "Stop service"].includes(kind)
     readonly property bool menuMode: kind === "Database actions" || kind === "Table actions"
     readonly property var fields: kind === "New database" ? [
@@ -105,10 +107,30 @@ Popup {
         importToNew = false;
     }
     function prepareConnection(engine, displayName, port, serviceName) {
+        editingConnectionId = "";
         selectedEngine = engine;
         suggestedConnectionName = displayName;
         suggestedPort = port;
         selectedServiceName = serviceName;
+        connectionNameInput.text = displayName;
+        hostInput.text = "localhost";
+        portInput.text = String(port);
+        usernameInput.text = engine === 0 ? "postgres" : "root";
+        passwordInput.text = "";
+        maintenanceDatabaseInput.text = "postgres";
+    }
+    function prepareExistingConnection(details) {
+        editingConnectionId = details.connectionId;
+        selectedEngine = details.engine;
+        suggestedConnectionName = details.displayName;
+        suggestedPort = details.port;
+        selectedServiceName = details.serviceName;
+        connectionNameInput.text = details.displayName;
+        hostInput.text = details.host;
+        portInput.text = String(details.port);
+        usernameInput.text = details.administratorUser;
+        passwordInput.text = "";
+        maintenanceDatabaseInput.text = details.maintenanceDatabase;
     }
     background: Rectangle {
         color: "#1a1f28"
@@ -255,6 +277,12 @@ Popup {
                     ActionButton { text: dialog.showPassword ? "Hide" : "Show"; glyph: "eye"; quiet: true; onClicked: dialog.showPassword = !dialog.showPassword }
                 }
                 Text {
+                    visible: dialog.kind === "Edit connection"
+                    text: "Leave blank to keep the current session password."
+                    color: Theme.subtle
+                    font.pixelSize: 10
+                }
+                Text {
                     visible: dialog.selectedEngine === 0
                     text: "POSTGRES MAINTENANCE DATABASE"
                     color: Theme.subtle
@@ -384,6 +412,17 @@ Popup {
             }
             RowLayout {
                 visible: !dialog.menuMode
+                ActionButton {
+                    visible: dialog.kind === "Edit connection"
+                    text: "Remove"
+                    glyph: "trash"
+                    danger: true
+                    onClicked: {
+                        dialog.connectionRemovalRequested(dialog.editingConnectionId);
+                        passwordInput.text = "";
+                        dialog.close();
+                    }
+                }
                 Item {
                     Layout.fillWidth: true
                 }
@@ -401,7 +440,7 @@ Popup {
                             dialog.connectionSubmitted(connectionNameInput.text, dialog.selectedEngine,
                                                        hostInput.text, Number(portInput.text), usernameInput.text,
                                                        passwordInput.text, maintenanceDatabaseInput.text,
-                                                       dialog.selectedServiceName);
+                                                       dialog.selectedServiceName, dialog.editingConnectionId);
                             passwordInput.text = "";
                         }
                         dialog.previewSubmitted(dialog.kind);

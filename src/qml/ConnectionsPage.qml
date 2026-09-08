@@ -6,6 +6,7 @@ Item {
     id: page
     signal actionRequested(string action)
     signal openRequested(int serviceIndex)
+    signal editRequested(string connectionId)
     readonly property bool hasLiveConnections: typeof applicationController !== "undefined"
 
     ColumnLayout {
@@ -147,7 +148,7 @@ Item {
                         hint: "Edit connection"
                         quiet: true
                         Layout.preferredWidth: 38
-                        onClicked: page.actionRequested("Edit connection")
+                        onClicked: page.editRequested(liveConnectionCard.connectionId)
                     }
                     ActionButton {
                         text: "Test"

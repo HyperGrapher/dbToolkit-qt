@@ -115,7 +115,8 @@ bool ApplicationController::saveConnection(const QString &displayName, int engin
                                            int port, const QString &administratorUser,
                                            const QString &administratorPassword,
                                            const QString &maintenanceDatabase,
-                                           const QString &serviceName)
+                                           const QString &serviceName,
+                                           const QString &connectionId)
 {
     if (displayName.trimmed().isEmpty() || host.trimmed().isEmpty() || administratorUser.trimmed().isEmpty() ||
         port < 1 || port > 65535 || engine < static_cast<int>(DatabaseEngine::PostgreSql) ||
@@ -126,6 +127,11 @@ bool ApplicationController::saveConnection(const QString &displayName, int engin
     }
 
     ConnectionProfile profile;
+    const QUuid existingId(connectionId);
+    const ConnectionProfile *existingProfile = m_connections.profile(existingId);
+    if (existingProfile != nullptr) {
+        profile = *existingProfile;
+    }
     profile.displayName = displayName.trimmed();
     profile.engine = static_cast<DatabaseEngine>(engine);
     profile.host = host.trimmed();
@@ -137,14 +143,46 @@ bool ApplicationController::saveConnection(const QString &displayName, int engin
         profile.maintenanceDatabase = "postgres";
     }
 
-    ConnectionCredentials credentials;
-    credentials.administratorPassword = administratorPassword;
+    ConnectionCredentials credentials = m_sessionCredentials.credentialsFor(profile.id);
+    if (!administratorPassword.isEmpty()) {
+        credentials.administratorPassword = administratorPassword;
+    }
     m_sessionCredentials.store(profile.id, std::move(credentials));
     m_connections.upsertProfile(profile);
     setActiveConnectionId(profile.id.toString(QUuid::WithoutBraces));
     emit operationCompleted("saveConnection", true,
                             "Connection saved for this app session. It will be encrypted and persisted with P04.", {});
     return true;
+}
+
+QVariantMap ApplicationController::connectionDetails(const QString &connectionId) const
+{
+    const ConnectionProfile *profile = m_connections.profile(QUuid(connectionId));
+    if (profile == nullptr) {
+        return {};
+    }
+    return {{"connectionId", profile->id.toString(QUuid::WithoutBraces)},
+            {"displayName", profile->displayName},
+            {"engine", static_cast<int>(profile->engine)},
+            {"host", profile->host},
+            {"port", profile->port},
+            {"administratorUser", profile->administratorUser},
+            {"maintenanceDatabase", profile->maintenanceDatabase},
+            {"serviceName", profile->serviceName}};
+}
+
+void ApplicationController::removeConnection(const QString &connectionId)
+{
+    const QUuid id(connectionId);
+    if (id.isNull() || !m_connections.removeProfile(id)) {
+        emit operationCompleted("removeConnection", false, "The selected connection no longer exists.", {});
+        return;
+    }
+    m_sessionCredentials.remove(id);
+    if (m_activeConnectionId == id) {
+        setActiveConnectionId({});
+    }
+    emit operationCompleted("removeConnection", true, "Connection removed from this app session.", {});
 }
 
 void ApplicationController::removeActiveConnection()

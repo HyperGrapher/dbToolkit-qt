@@ -9,6 +9,7 @@
 #include "models/ServiceListModel.h"
 
 #include <QObject>
+#include <QVariantMap>
 
 namespace dbtoolkit {
 
@@ -46,7 +47,10 @@ public:
                                     int port, const QString &administratorUser,
                                     const QString &administratorPassword,
                                     const QString &maintenanceDatabase = {},
-                                    const QString &serviceName = {});
+                                    const QString &serviceName = {},
+                                    const QString &connectionId = {});
+    Q_INVOKABLE QVariantMap connectionDetails(const QString &connectionId) const;
+    Q_INVOKABLE void removeConnection(const QString &connectionId);
     Q_INVOKABLE void removeActiveConnection();
     Q_INVOKABLE void testActiveConnection();
     Q_INVOKABLE void cancelActiveWork();

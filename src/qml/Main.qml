@@ -360,6 +360,17 @@ ApplicationWindow {
             }
             ConnectionsPage {
                 onActionRequested: action => window.showAction(action)
+                onEditRequested: connectionId => {
+                    const details = applicationController.connectionDetails(connectionId);
+                    if (!details.connectionId) {
+                        toast.text = "The selected connection no longer exists.";
+                        toast.open();
+                        return;
+                    }
+                    previewDialog.prepareExistingConnection(details);
+                    previewDialog.kind = "Edit connection";
+                    previewDialog.open();
+                }
                 onOpenRequested: serviceIndex => {
                     workspacePage.serviceIndex = serviceIndex;
                     workspacePage.databaseIndex = 0;
@@ -431,7 +442,7 @@ ApplicationWindow {
 
     PreviewDialog {
         id: previewDialog
-        databaseName: workspacePage.database.name
+        databaseName: workspacePage.database ? workspacePage.database.name : ""
         cellValue: viewerPage.selectedValue
         onActionRequested: action => kind = action
         onPreviewSubmitted: action => {
@@ -441,21 +452,22 @@ ApplicationWindow {
             toast.text = "This action is ready for a selected live connection.";
             toast.open();
         }
-        onConnectionSubmitted: (displayName, engine, host, port, username, password, maintenanceDatabase, serviceName) => {
+        onConnectionSubmitted: (displayName, engine, host, port, username, password, maintenanceDatabase, serviceName, connectionId) => {
             if (typeof applicationController === "undefined") {
                 toast.text = "Connection testing is available in the compiled application.";
                 toast.open();
                 return;
             }
-            if (applicationController.saveConnection(displayName, engine, host, port, username, password, maintenanceDatabase, serviceName)) {
+            if (applicationController.saveConnection(displayName, engine, host, port, username, password, maintenanceDatabase, serviceName, connectionId)) {
                 applicationController.testActiveConnection();
             }
         }
+        onConnectionRemovalRequested: connectionId => applicationController.removeConnection(connectionId)
     }
     Connections {
         target: typeof applicationController === "undefined" ? null : applicationController
         function onOperationCompleted(operation, succeeded, message, recoveryHint) {
-            if (operation !== "saveConnection" && operation !== "testConnection" && operation !== "startService" && operation !== "refreshDatabases") {
+            if (operation !== "saveConnection" && operation !== "removeConnection" && operation !== "testConnection" && operation !== "startService" && operation !== "refreshDatabases") {
                 return;
             }
             toast.text = succeeded ? message : message + (recoveryHint.length > 0 ? " " + recoveryHint : "");
