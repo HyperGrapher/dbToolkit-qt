@@ -12,6 +12,11 @@ struct DatabaseListResult {
     QString serverVersion;
 };
 
+struct TableListResult {
+    OperationResult operation;
+    QList<TableSummary> tables;
+};
+
 class DatabaseDriver {
 public:
     virtual ~DatabaseDriver() = default;
@@ -22,6 +27,9 @@ public:
         const ConnectionProfile &profile, const ConnectionCredentials &credentials) const = 0;
     [[nodiscard]] virtual DatabaseListResult listDatabases(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials) const = 0;
+    [[nodiscard]] virtual TableListResult listTables(
+        const ConnectionProfile &profile, const ConnectionCredentials &credentials,
+        const QString &databaseName) const = 0;
 };
 
 class PostgreSqlDriver final : public DatabaseDriver {
@@ -32,6 +40,9 @@ public:
         const ConnectionProfile &profile, const ConnectionCredentials &credentials) const override;
     [[nodiscard]] DatabaseListResult listDatabases(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials) const override;
+    [[nodiscard]] TableListResult listTables(
+        const ConnectionProfile &profile, const ConnectionCredentials &credentials,
+        const QString &databaseName) const override;
 };
 
 class MySqlDriver final : public DatabaseDriver {
@@ -44,6 +55,9 @@ public:
         const ConnectionProfile &profile, const ConnectionCredentials &credentials) const override;
     [[nodiscard]] DatabaseListResult listDatabases(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials) const override;
+    [[nodiscard]] TableListResult listTables(
+        const ConnectionProfile &profile, const ConnectionCredentials &credentials,
+        const QString &databaseName) const override;
 
 private:
     DatabaseEngine m_engine;

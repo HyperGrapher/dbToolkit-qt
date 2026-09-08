@@ -40,6 +40,8 @@ add_library(DbToolKitCore STATIC
     src/models/DatabaseListModel.h
     src/models/ServiceListModel.cpp
     src/models/ServiceListModel.h
+    src/models/TableListModel.cpp
+    src/models/TableListModel.h
     src/services/WindowsDatabaseService.cpp
     src/services/WindowsDatabaseService.h
     src/controllers/ApplicationController.cpp

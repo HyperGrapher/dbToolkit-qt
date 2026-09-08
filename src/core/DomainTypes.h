@@ -89,6 +89,13 @@ struct DatabaseSummary {
     QDateTime refreshedAt;
 };
 
+struct TableSummary {
+    QUuid connectionId;
+    QString databaseName;
+    QString schemaName;
+    QString tableName;
+};
+
 struct CachedDatabaseSnapshot {
     QUuid connectionId;
     QList<DatabaseSummary> databases;
@@ -147,6 +154,7 @@ struct TransferProgress {
 Q_DECLARE_OPERATORS_FOR_FLAGS(dbtoolkit::DatabaseCapabilities)
 Q_DECLARE_METATYPE(dbtoolkit::ConnectionProfile)
 Q_DECLARE_METATYPE(dbtoolkit::DatabaseSummary)
+Q_DECLARE_METATYPE(dbtoolkit::TableSummary)
 Q_DECLARE_METATYPE(dbtoolkit::CachedDatabaseSnapshot)
 Q_DECLARE_METATYPE(dbtoolkit::TableMetadata)
 Q_DECLARE_METATYPE(dbtoolkit::RowIdentity)

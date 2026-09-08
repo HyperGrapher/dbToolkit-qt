@@ -5,13 +5,16 @@ import QtQuick.Layouts
 
 Item {
     id: page
-    property int selectedDatabaseIndex: -1
-    readonly property bool hasSelection: selectedDatabaseIndex >= 0 && selectedDatabaseIndex < databases.length
-    readonly property var databases: []
-    readonly property var tableNames: []
+    readonly property bool hasApplicationController: typeof applicationController !== "undefined"
+    readonly property bool hasSelection: hasApplicationController &&
+                                         applicationController.activeConnectionId.length > 0 &&
+                                         applicationController.activeDatabaseName.length > 0
+    readonly property var databasesModel: hasApplicationController ? applicationController.databasesModel : null
+    readonly property var tablesModel: hasApplicationController ? applicationController.tablesModel : null
     readonly property var rows: []
-    readonly property string databaseName: hasSelection ? databases[selectedDatabaseIndex].name : ""
-    readonly property string serviceName: ""
+    readonly property string databaseName: hasSelection ? applicationController.activeDatabaseName : ""
+    readonly property string serviceName: hasSelection ? applicationController.activeConnectionName : ""
+    property string schemaName: ""
     property string tableName: ""
     property int selectedRow: 1
     property int selectedColumn: 1
@@ -23,8 +26,11 @@ Item {
     readonly property string selectedValue: selectedRecord ? String([selectedRecord.id, selectedRecord.name, selectedRecord.email, selectedRecord.role, selectedRecord.status, selectedRecord.created][selectedColumn]) : "No cell selected"
     signal actionRequested(string action)
 
-    function selectDatabase(index) {
-        selectedDatabaseIndex = index;
+    function selectDatabase(databaseName) {
+        if (!hasApplicationController || databaseName.length === 0)
+            return;
+        applicationController.openDatabase(databaseName);
+        schemaName = "";
         tableName = "";
         selectedRow = 0;
         selectedColumn = 0;
@@ -54,11 +60,13 @@ Item {
             }
             ComboBox {
                 id: databaseSelector
-                model: ["Choose a database…"].concat(page.databases.slice(0, 4).map(database => database.name))
-                currentIndex: page.selectedDatabaseIndex + 1
+                model: page.databasesModel
+                textRole: "name"
+                currentIndex: -1
+                displayText: page.hasSelection ? page.databaseName : "Choose a database…"
                 implicitWidth: 190
                 implicitHeight: 36
-                onActivated: page.selectDatabase(currentIndex - 1)
+                onActivated: page.selectDatabase(currentText)
             }
             Tag {
                 text: page.hasSelection ? "Live data" : "Selection required"
@@ -116,7 +124,8 @@ Item {
                     glyph: "database"
                     primary: true
                     Layout.alignment: Qt.AlignHCenter
-                    onClicked: page.selectDatabase(0)
+                    enabled: databaseSelector.count > 0
+                    onClicked: databaseSelector.popup.open()
                 }
             }
         }
@@ -144,16 +153,16 @@ Item {
                             ink: Theme.accent
                         }
                         Text {
-                            text: "public"
+                            text: "SCHEMAS & TABLES"
                             color: Theme.text
-                            font.pixelSize: 12
+                            font.pixelSize: 10
                             font.weight: Font.DemiBold
                         }
                         Item {
                             Layout.fillWidth: true
                         }
                         Text {
-                            text: "12"
+                            text: page.hasApplicationController ? applicationController.tableCount : 0
                             color: Theme.subtle
                             font.pixelSize: 10
                         }
@@ -169,22 +178,27 @@ Item {
                         Layout.fillHeight: true
                         clip: true
                         spacing: 3
-                        model: page.tableNames.filter(t => t.includes(tableSearch.text.toLowerCase()))
+                        model: page.tablesModel
                         ScrollBar.vertical: ScrollBar {}
                         delegate: AbstractButton {
                             id: tableButton
-                            required property string modelData
+                            required property string schemaName
+                            required property string tableName
+                            required property string qualifiedName
                             width: ListView.view.width
-                            implicitHeight: 35
+                            implicitHeight: visible ? 46 : 0
+                            visible: tableSearch.text.length === 0 ||
+                                     qualifiedName.toLowerCase().includes(tableSearch.text.toLowerCase())
                             hoverEnabled: true
                             onClicked: {
-                                page.tableName = modelData;
+                                page.schemaName = tableButton.schemaName;
+                                page.tableName = tableButton.tableName;
                                 page.selectedRow = 0;
                             }
-                            Accessible.name: modelData
+                            Accessible.name: qualifiedName
                             background: Rectangle {
                                 radius: 5
-                                color: page.tableName === tableButton.modelData ? "#263650" : tableButton.hovered ? Theme.raised : "transparent"
+                                color: page.tableName === tableButton.tableName && page.schemaName === tableButton.schemaName ? "#263650" : tableButton.hovered ? Theme.raised : "transparent"
                                 border.color: tableButton.visualFocus ? Theme.accent : "transparent"
                             }
                             contentItem: RowLayout {
@@ -195,20 +209,38 @@ Item {
                                     name: "table"
                                     implicitWidth: 14
                                     implicitHeight: 14
-                                    ink: page.tableName === tableButton.modelData ? Theme.accent : Theme.subtle
+                                    ink: page.tableName === tableButton.tableName && page.schemaName === tableButton.schemaName ? Theme.accent : Theme.subtle
                                 }
-                                Text {
-                                    text: tableButton.modelData
-                                    color: page.tableName === tableButton.modelData ? Theme.accent : Theme.muted
-                                    font.pixelSize: 11
+                                ColumnLayout {
                                     Layout.fillWidth: true
-                                    elide: Text.ElideRight
+                                    spacing: 1
+                                    Text {
+                                        text: tableButton.tableName
+                                        color: page.tableName === tableButton.tableName && page.schemaName === tableButton.schemaName ? Theme.accent : Theme.muted
+                                        font.pixelSize: 11
+                                        Layout.fillWidth: true
+                                        elide: Text.ElideRight
+                                    }
+                                    Text {
+                                        text: tableButton.schemaName
+                                        color: Theme.subtle
+                                        font.pixelSize: 9
+                                        Layout.fillWidth: true
+                                        elide: Text.ElideRight
+                                    }
                                 }
                             }
                         }
+                        Text {
+                            anchors.centerIn: parent
+                            visible: parent.count === 0
+                            text: applicationController.isBusy ? "Loading tables…" : "No tables found"
+                            color: Theme.muted
+                            font.pixelSize: 11
+                        }
                     }
                     Text {
-                        text: page.tableNames.length + " tables"
+                        text: (page.hasApplicationController ? applicationController.tableCount : 0) + " tables"
                         color: Theme.subtle
                         font.pixelSize: 9
                     }
@@ -238,7 +270,7 @@ Item {
                                 implicitHeight: 17
                             }
                             Text {
-                                text: page.tableName
+                                text: page.tableName.length > 0 ? page.schemaName + "." + page.tableName : "Choose a table"
                                 color: Theme.text
                                 font.pixelSize: 14
                                 font.weight: Font.DemiBold
@@ -496,6 +528,15 @@ Item {
                     }
                 }
             }
+        }
+    }
+    Connections {
+        target: page.hasApplicationController ? applicationController : null
+        function onActiveDatabaseChanged() {
+            page.schemaName = "";
+            page.tableName = "";
+            page.selectedRow = 0;
+            page.selectedColumn = 0;
         }
     }
 }

@@ -21,10 +21,13 @@ QString escapePostgreSqlParameter(const QString &value)
 }
 
 QString postgreSqlConnectionString(const ConnectionProfile &profile,
-                                  const ConnectionCredentials &credentials)
+                                  const ConnectionCredentials &credentials,
+                                  const QString &databaseOverride = {})
 {
-    const QString database = profile.maintenanceDatabase.isEmpty() ? "postgres"
-                                                                    : profile.maintenanceDatabase;
+    const QString database = !databaseOverride.isEmpty()
+                                 ? databaseOverride
+                                 : profile.maintenanceDatabase.isEmpty() ? "postgres"
+                                                                          : profile.maintenanceDatabase;
     return "host=" + escapePostgreSqlParameter(profile.host) + " port=" +
            QString::number(profile.port == 0 ? 5432 : profile.port) + " user=" +
            escapePostgreSqlParameter(profile.administratorUser) + " password=" +
@@ -57,6 +60,11 @@ QString formatBytes(quint64 bytes)
 }
 
 DatabaseListResult unavailableDatabaseList()
+{
+    return {.operation = driversUnavailableResult()};
+}
+
+TableListResult unavailableTableList()
 {
     return {.operation = driversUnavailableResult()};
 }
@@ -130,6 +138,46 @@ DatabaseListResult PostgreSqlDriver::listDatabases(
     Q_UNUSED(profile)
     Q_UNUSED(credentials)
     return unavailableDatabaseList();
+#endif
+}
+
+TableListResult PostgreSqlDriver::listTables(
+    const ConnectionProfile &profile, const ConnectionCredentials &credentials,
+    const QString &databaseName) const
+{
+#ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
+    try {
+        pqxx::connection connection{
+            postgreSqlConnectionString(profile, credentials, databaseName).toStdString()};
+        pqxx::read_transaction transaction{connection};
+        const pqxx::result rows = transaction.exec(
+            "SELECT table_schema, table_name FROM information_schema.tables "
+            "WHERE table_type = 'BASE TABLE' "
+            "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
+            "ORDER BY table_schema, table_name");
+        transaction.commit();
+
+        TableListResult result;
+        result.operation = OperationResult::success("Tables loaded from " + databaseName + ".");
+        for (const auto &row : rows) {
+            TableSummary summary;
+            summary.connectionId = profile.id;
+            summary.databaseName = databaseName;
+            summary.schemaName = QString::fromUtf8(row[0].c_str());
+            summary.tableName = QString::fromUtf8(row[1].c_str());
+            result.tables.append(std::move(summary));
+        }
+        return result;
+    } catch (const std::exception &error) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(error.what()),
+                    "Check that the database exists and the administrator account can read its table metadata.")};
+    }
+#else
+    Q_UNUSED(profile)
+    Q_UNUSED(credentials)
+    Q_UNUSED(databaseName)
+    return unavailableTableList();
 #endif
 }
 
@@ -233,6 +281,64 @@ DatabaseListResult MySqlDriver::listDatabases(
     Q_UNUSED(profile)
     Q_UNUSED(credentials)
     return unavailableDatabaseList();
+#endif
+}
+
+TableListResult MySqlDriver::listTables(
+    const ConnectionProfile &profile, const ConnectionCredentials &credentials,
+    const QString &databaseName) const
+{
+#ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
+    MYSQL *rawConnection = mysql_init(nullptr);
+    if (rawConnection == nullptr) {
+        return {.operation = OperationResult::failure("Could not initialize the MySQL client library.")};
+    }
+    const std::unique_ptr<MYSQL, decltype(&mysql_close)> connection(rawConnection, mysql_close);
+    const QByteArray host = profile.host.toUtf8();
+    const QByteArray user = profile.administratorUser.toUtf8();
+    const QByteArray password = credentials.administratorPassword.toUtf8();
+    const QByteArray database = databaseName.toUtf8();
+    const unsigned int port = profile.port == 0 ? 3306 : profile.port;
+    if (mysql_real_connect(connection.get(), host.constData(), user.constData(), password.constData(),
+                           database.constData(), port, nullptr, 0) == nullptr) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(mysql_error(connection.get())),
+                    "Check that the database exists and the account can connect to it.")};
+    }
+
+    constexpr const char *query =
+        "SELECT table_schema, table_name FROM information_schema.tables "
+        "WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE' "
+        "ORDER BY table_name";
+    if (mysql_query(connection.get(), query) != 0) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(mysql_error(connection.get())),
+                    "The account connected but cannot read table metadata.")};
+    }
+    const std::unique_ptr<MYSQL_RES, decltype(&mysql_free_result)> rows(
+        mysql_store_result(connection.get()), mysql_free_result);
+    if (!rows) {
+        return {.operation = OperationResult::failure(
+                    QString::fromUtf8(mysql_error(connection.get())),
+                    "The server did not return table metadata.")};
+    }
+
+    TableListResult result;
+    result.operation = OperationResult::success("Tables loaded from " + databaseName + ".");
+    while (MYSQL_ROW row = mysql_fetch_row(rows.get())) {
+        TableSummary summary;
+        summary.connectionId = profile.id;
+        summary.databaseName = databaseName;
+        summary.schemaName = QString::fromUtf8(row[0]);
+        summary.tableName = QString::fromUtf8(row[1]);
+        result.tables.append(std::move(summary));
+    }
+    return result;
+#else
+    Q_UNUSED(profile)
+    Q_UNUSED(credentials)
+    Q_UNUSED(databaseName)
+    return unavailableTableList();
 #endif
 }
 

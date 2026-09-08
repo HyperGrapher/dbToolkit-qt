@@ -7,6 +7,7 @@
 #include "models/ConnectionListModel.h"
 #include "models/DatabaseListModel.h"
 #include "models/ServiceListModel.h"
+#include "models/TableListModel.h"
 
 #include <QObject>
 #include <QVariantMap>
@@ -18,11 +19,13 @@ class ApplicationController final : public QObject {
     Q_PROPERTY(QObject *connectionsModel READ connectionsModel CONSTANT)
     Q_PROPERTY(QObject *servicesModel READ servicesModel CONSTANT)
     Q_PROPERTY(QObject *databasesModel READ databasesModel CONSTANT)
+    Q_PROPERTY(QObject *tablesModel READ tablesModel CONSTANT)
     Q_PROPERTY(QString activeConnectionId READ activeConnectionId WRITE setActiveConnectionId NOTIFY activeConnectionChanged)
     Q_PROPERTY(QString activeConnectionName READ activeConnectionName NOTIFY activeConnectionChanged)
     Q_PROPERTY(int activeConnectionEngine READ activeConnectionEngine NOTIFY activeConnectionChanged)
     Q_PROPERTY(int activeConnectionPort READ activeConnectionPort NOTIFY activeConnectionChanged)
     Q_PROPERTY(QString activeDatabaseName READ activeDatabaseName WRITE setActiveDatabaseName NOTIFY activeDatabaseChanged)
+    Q_PROPERTY(int tableCount READ tableCount NOTIFY tablesChanged)
     Q_PROPERTY(bool isBusy READ isBusy NOTIFY busyChanged)
     Q_PROPERTY(bool isScanningServices READ isScanningServices NOTIFY scanningServicesChanged)
     Q_PROPERTY(int discoveredServiceCount READ discoveredServiceCount NOTIFY servicesChanged)
@@ -32,11 +35,13 @@ public:
     [[nodiscard]] QObject *connectionsModel();
     [[nodiscard]] QObject *servicesModel();
     [[nodiscard]] QObject *databasesModel();
+    [[nodiscard]] QObject *tablesModel();
     [[nodiscard]] QString activeConnectionId() const;
     [[nodiscard]] QString activeConnectionName() const;
     [[nodiscard]] int activeConnectionEngine() const;
     [[nodiscard]] int activeConnectionPort() const;
     [[nodiscard]] QString activeDatabaseName() const;
+    [[nodiscard]] int tableCount() const;
     [[nodiscard]] bool isBusy() const;
     [[nodiscard]] bool isScanningServices() const;
     [[nodiscard]] int discoveredServiceCount() const;
@@ -55,12 +60,15 @@ public:
     Q_INVOKABLE void testActiveConnection();
     Q_INVOKABLE void cancelActiveWork();
     Q_INVOKABLE void refreshActiveDatabases();
+    Q_INVOKABLE bool openDatabase(const QString &databaseName);
+    Q_INVOKABLE void refreshActiveTables();
     Q_INVOKABLE void refreshServices();
     Q_INVOKABLE void startService(const QString &serviceName);
 
 signals:
     void activeConnectionChanged();
     void activeDatabaseChanged();
+    void tablesChanged();
     void busyChanged();
     void scanningServicesChanged();
     void servicesChanged();
@@ -74,6 +82,7 @@ private:
     ConnectionListModel m_connections;
     ServiceListModel m_services;
     DatabaseListModel m_databases;
+    TableListModel m_tables;
     SessionCredentialStore m_sessionCredentials;
     CachedSnapshotStore m_snapshotStore;
     StaleResultGate m_resultGate;

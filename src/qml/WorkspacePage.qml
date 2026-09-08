@@ -39,7 +39,7 @@ Item {
     readonly property bool hasSelection: service !== null && database !== null
     readonly property bool offline: service === null || !service.running
     property bool managedOnly: false
-    signal browseRequested
+    signal browseRequested(string databaseName)
     signal actionRequested(string action)
     signal connectRequested(int engine, string displayName, int port, string serviceName)
     ColumnLayout {
@@ -297,16 +297,19 @@ Item {
                             hoverEnabled: true
                             readonly property bool selected: page.selectedDatabase && page.selectedDatabase.name === databaseRow.name
                             Accessible.name: databaseRow.name
-                            onClicked: page.selectedDatabase = ({
-                                name: databaseRow.name,
-                                owner: databaseRow.owner,
-                                size: databaseRow.size,
-                                tables: databaseRow.tableCount < 0 ? "Unavailable" : String(databaseRow.tableCount),
-                                managed: databaseRow.isManaged,
-                                letter: databaseRow.name.length > 0 ? databaseRow.name[0].toUpperCase() : "?",
-                                color: Theme.accent,
-                                note: ""
-                            })
+                            onClicked: {
+                                page.selectedDatabase = ({
+                                    name: databaseRow.name,
+                                    owner: databaseRow.owner,
+                                    size: databaseRow.size,
+                                    tables: databaseRow.tableCount < 0 ? "Unavailable" : String(databaseRow.tableCount),
+                                    managed: databaseRow.isManaged,
+                                    letter: databaseRow.name.length > 0 ? databaseRow.name[0].toUpperCase() : "?",
+                                    color: Theme.accent,
+                                    note: ""
+                                });
+                                applicationController.activeDatabaseName = databaseRow.name;
+                            }
                             background: Rectangle {
                                 color: databaseRow.selected ? "#202d43" : databaseRow.hovered ? Theme.raised : "transparent"
                                 Rectangle {
@@ -432,7 +435,7 @@ Item {
                 sourceComponent: DatabaseInspector {
                     database: page.database
                     service: page.service
-                    onBrowseRequested: page.browseRequested()
+                    onBrowseRequested: page.browseRequested(page.database.name)
                     onActionRequested: action => page.actionRequested(action)
                 }
             }
@@ -457,7 +460,7 @@ Item {
                 primary: true
                 enabled: !page.offline
                 hint: page.offline ? "Cached summaries are available; tables require the service." : ""
-                onClicked: page.browseRequested()
+                onClicked: page.browseRequested(page.database.name)
             }
         }
     }

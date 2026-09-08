@@ -46,8 +46,8 @@ ApplicationWindow {
         previewDialog.open();
     }
 
-    function openViewerFromWorkspace() {
-        viewerPage.selectDatabase(workspacePage.databaseIndex);
+    function openViewerFromWorkspace(databaseName) {
+        applicationController.openDatabase(databaseName);
         currentPage = 2;
     }
 
@@ -310,7 +310,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
             }
             Tag {
-                text: "UI PREVIEW"
+                text: "LOCAL DATABASES"
                 tone: Theme.accent
             }
             Rectangle {
@@ -350,7 +350,7 @@ ApplicationWindow {
             currentIndex: window.currentPage
             WorkspacePage {
                 id: workspacePage
-                onBrowseRequested: window.openViewerFromWorkspace()
+                onBrowseRequested: databaseName => window.openViewerFromWorkspace(databaseName)
                 onActionRequested: action => window.showAction(action)
                 onConnectRequested: (engine, displayName, port, serviceName) => {
                     previewDialog.prepareConnection(engine, displayName, port, serviceName);
@@ -414,12 +414,14 @@ ApplicationWindow {
                 ink: Theme.subtle
             }
             Text {
-                text: "Ready"
+                text: applicationController.isBusy ? "Working…" : "Ready"
                 color: Theme.muted
                 font.pixelSize: 9
             }
             Text {
-                text: "·  No active connection"
+                text: "·  " + (applicationController.activeConnectionName.length > 0
+                               ? applicationController.activeConnectionName
+                               : "No active connection")
                 color: Theme.subtle
                 font.pixelSize: 9
             }
@@ -427,7 +429,9 @@ ApplicationWindow {
                 Layout.fillWidth: true
             }
             Text {
-                text: "No active database connection"
+                text: applicationController.activeDatabaseName.length > 0
+                      ? applicationController.activeDatabaseName
+                      : "No active database"
                 color: Theme.subtle
                 font.pixelSize: 9
             }
@@ -467,7 +471,7 @@ ApplicationWindow {
     Connections {
         target: typeof applicationController === "undefined" ? null : applicationController
         function onOperationCompleted(operation, succeeded, message, recoveryHint) {
-            if (operation !== "saveConnection" && operation !== "removeConnection" && operation !== "testConnection" && operation !== "startService" && operation !== "refreshDatabases") {
+            if (operation !== "saveConnection" && operation !== "removeConnection" && operation !== "testConnection" && operation !== "startService" && operation !== "refreshDatabases" && operation !== "openDatabase" && operation !== "refreshTables") {
                 return;
             }
             toast.text = succeeded ? message : message + (recoveryHint.length > 0 ? " " + recoveryHint : "");
