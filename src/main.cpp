@@ -4,9 +4,22 @@
 #include <QQuickStyle>
 
 #include "controllers/ApplicationController.h"
+#include "services/WindowsDatabaseService.h"
+
+#ifdef Q_OS_WIN
+#include <QString>
+#endif
 
 int main(int argc, char *argv[])
 {
+#ifdef Q_OS_WIN
+    if (argc == 3 && QString::fromLocal8Bit(argv[1]) == "--dbtoolkit-start-service") {
+        return dbtoolkit::WindowsDatabaseService::startElevatedHelper(
+                   QString::fromLocal8Bit(argv[2])).isSuccess()
+                   ? 0
+                   : 1;
+    }
+#endif
     QGuiApplication app(argc, argv);
     QCoreApplication::setApplicationName("dbToolKit");
     QCoreApplication::setOrganizationName("dbToolKit");

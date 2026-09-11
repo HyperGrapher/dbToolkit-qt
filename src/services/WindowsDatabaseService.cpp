@@ -1,10 +1,12 @@
 #include "services/WindowsDatabaseService.h"
 
+#include <QCoreApplication>
 #include <QFileInfo>
 #include <QThread>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
+#include <shellapi.h>
 
 #include <cstddef>
 #include <memory>
@@ -66,19 +68,21 @@ QString executableFromCommand(const QString &command)
     return firstSpace < 0 ? expanded : expanded.first(firstSpace);
 }
 
-std::optional<DatabaseEngine> classifyExecutable(const QString &executablePath,
-                                                 const QString &serviceName,
-                                                 const QString &displayName)
+std::optional<DatabaseEngine> classifyService(const QString &commandLine, const QString &serviceName,
+                                              const QString &displayName)
 {
+    const QString executablePath = executableFromCommand(commandLine);
     const QString fileName = QFileInfo(executablePath).fileName().toLower();
-    if (fileName == "postgres.exe" || fileName == "postmaster.exe") {
+    const QString identity = (commandLine + ' ' + serviceName + ' ' + displayName).toLower();
+    if (fileName == "postgres.exe" || fileName == "postmaster.exe" ||
+        fileName == "pg_ctl.exe" || fileName == "postgresql.exe" ||
+        identity.contains("postgres")) {
         return DatabaseEngine::PostgreSql;
     }
     if (fileName != "mysqld.exe") {
         return std::nullopt;
     }
 
-    const QString identity = (executablePath + ' ' + serviceName + ' ' + displayName).toLower();
     return identity.contains("mariadb") ? DatabaseEngine::MariaDb : DatabaseEngine::MySql;
 }
 
@@ -99,7 +103,7 @@ ServiceState serviceState(DWORD state)
     }
 }
 
-QString queryExecutablePath(SC_HANDLE service)
+QString queryServiceCommand(SC_HANDLE service)
 {
     DWORD bytesNeeded = 0;
     QueryServiceConfigW(service, nullptr, 0, &bytesNeeded);
@@ -111,72 +115,11 @@ QString queryExecutablePath(SC_HANDLE service)
     if (!QueryServiceConfigW(service, config, bytesNeeded, &bytesNeeded)) {
         return {};
     }
-    return executableFromCommand(QString::fromWCharArray(config->lpBinaryPathName));
+    return QString::fromWCharArray(config->lpBinaryPathName);
 }
 
-} // namespace
-#endif
-
-QList<ServiceSummary> WindowsDatabaseService::discover()
+OperationResult startDirect(const QString &serviceName)
 {
-#ifdef Q_OS_WIN
-    const ServiceHandle manager(OpenSCManagerW(nullptr, nullptr, SC_MANAGER_ENUMERATE_SERVICE));
-    if (!manager) {
-        return {};
-    }
-
-    DWORD bytesNeeded = 0;
-    DWORD serviceCount = 0;
-    DWORD resumeHandle = 0;
-    EnumServicesStatusExW(manager.get(), SC_ENUM_PROCESS_INFO, SERVICE_WIN32_OWN_PROCESS,
-                          SERVICE_STATE_ALL, nullptr, 0, &bytesNeeded, &serviceCount,
-                          &resumeHandle, nullptr);
-    if (GetLastError() != ERROR_MORE_DATA || bytesNeeded == 0) {
-        return {};
-    }
-
-    std::vector<std::byte> buffer(bytesNeeded);
-    if (!EnumServicesStatusExW(manager.get(), SC_ENUM_PROCESS_INFO, SERVICE_WIN32_OWN_PROCESS,
-                               SERVICE_STATE_ALL, reinterpret_cast<LPBYTE>(buffer.data()), bytesNeeded,
-                               &bytesNeeded, &serviceCount, &resumeHandle, nullptr)) {
-        return {};
-    }
-
-    QList<ServiceSummary> services;
-    const auto *entries = reinterpret_cast<const ENUM_SERVICE_STATUS_PROCESSW *>(buffer.data());
-    for (DWORD index = 0; index < serviceCount; ++index) {
-        const QString serviceName = QString::fromWCharArray(entries[index].lpServiceName);
-        const QString displayName = QString::fromWCharArray(entries[index].lpDisplayName);
-        const ServiceHandle service(OpenServiceW(manager.get(), entries[index].lpServiceName,
-                                                 SERVICE_QUERY_CONFIG));
-        if (!service) {
-            continue;
-        }
-        const QString executablePath = queryExecutablePath(service.get());
-        const auto engine = classifyExecutable(executablePath, serviceName, displayName);
-        if (!engine.has_value()) {
-            continue;
-        }
-
-        ServiceSummary summary;
-        summary.serviceName = serviceName;
-        summary.displayName = displayName;
-        summary.executablePath = executablePath;
-        summary.engine = *engine;
-        summary.port = *engine == DatabaseEngine::PostgreSql ? 5432 : 3306;
-        summary.state = serviceState(entries[index].ServiceStatusProcess.dwCurrentState);
-        summary.observedAt = QDateTime::currentDateTime();
-        services.append(std::move(summary));
-    }
-    return services;
-#else
-    return {};
-#endif
-}
-
-OperationResult WindowsDatabaseService::start(const QString &serviceName)
-{
-#ifdef Q_OS_WIN
     const ServiceHandle manager(OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT));
     if (!manager) {
         return OperationResult::failure("Windows Service Manager is unavailable.",
@@ -186,12 +129,14 @@ OperationResult WindowsDatabaseService::start(const QString &serviceName)
     const ServiceHandle service(OpenServiceW(manager.get(), nativeName.c_str(),
                                              SERVICE_QUERY_CONFIG | SERVICE_QUERY_STATUS | SERVICE_START));
     if (!service) {
-        return OperationResult::failure("The database service could not be opened.",
-                                        windowsErrorMessage(GetLastError()));
+        const DWORD error = GetLastError();
+        return OperationResult::failure(
+            "The database service could not be opened.",
+            error == ERROR_ACCESS_DENIED ? "DBTOOLKIT_ACCESS_DENIED" : windowsErrorMessage(error));
     }
 
-    const QString executablePath = queryExecutablePath(service.get());
-    if (!classifyExecutable(executablePath, serviceName, {}).has_value()) {
+    const QString commandLine = queryServiceCommand(service.get());
+    if (!classifyService(commandLine, serviceName, {}).has_value()) {
         return OperationResult::failure("The selected Windows service is not a supported database service.");
     }
 
@@ -204,10 +149,9 @@ OperationResult WindowsDatabaseService::start(const QString &serviceName)
     }
     if (!StartServiceW(service.get(), 0, nullptr)) {
         const DWORD error = GetLastError();
-        const QString hint = error == ERROR_ACCESS_DENIED
-                                 ? "Windows denied permission. Service elevation support will be added next."
-                                 : windowsErrorMessage(error);
-        return OperationResult::failure("The database service could not be started.", hint);
+        return OperationResult::failure(
+            "The database service could not be started.",
+            error == ERROR_ACCESS_DENIED ? "DBTOOLKIT_ACCESS_DENIED" : windowsErrorMessage(error));
     }
 
     for (int attempt = 0; attempt < 50; ++attempt) {
@@ -225,6 +169,125 @@ OperationResult WindowsDatabaseService::start(const QString &serviceName)
     }
     return OperationResult::failure("The database service did not reach the running state.",
                                     "Check Windows Services for the service-specific error.");
+}
+
+OperationResult startWithElevation(const QString &serviceName)
+{
+    if (serviceName.contains('"') || serviceName.contains('\r') || serviceName.contains('\n')) {
+        return OperationResult::failure("The Windows service name is invalid.");
+    }
+
+    const QString applicationPath = QCoreApplication::applicationFilePath();
+    if (applicationPath.isEmpty()) {
+        return OperationResult::failure("Could not locate the application for elevated service control.");
+    }
+    const QString parameters = "--dbtoolkit-start-service \"" + serviceName + "\"";
+    SHELLEXECUTEINFOW request{};
+    request.cbSize = sizeof(request);
+    request.fMask = SEE_MASK_NOCLOSEPROCESS;
+    request.lpVerb = L"runas";
+    request.lpFile = reinterpret_cast<const wchar_t *>(applicationPath.utf16());
+    request.lpParameters = reinterpret_cast<const wchar_t *>(parameters.utf16());
+    request.nShow = SW_HIDE;
+    if (!ShellExecuteExW(&request)) {
+        const DWORD error = GetLastError();
+        const QString hint = error == ERROR_CANCELLED ? "Elevation was cancelled."
+                                                    : windowsErrorMessage(error);
+        return OperationResult::failure("Windows could not elevate database service control.", hint);
+    }
+
+    const DWORD waitResult = WaitForSingleObject(request.hProcess, 60000);
+    if (waitResult != WAIT_OBJECT_0) {
+        CloseHandle(request.hProcess);
+        return OperationResult::failure("The elevated service operation did not finish in time.");
+    }
+    DWORD exitCode = 1;
+    GetExitCodeProcess(request.hProcess, &exitCode);
+    CloseHandle(request.hProcess);
+    return exitCode == 0 ? OperationResult::success("Database service started with elevation.")
+                         : OperationResult::failure("The elevated database service operation failed.",
+                                                    "Check Windows Services for the service-specific error.");
+}
+
+} // namespace
+#endif
+
+QList<ServiceSummary> WindowsDatabaseService::discover()
+{
+#ifdef Q_OS_WIN
+    const ServiceHandle manager(OpenSCManagerW(nullptr, nullptr, SC_MANAGER_ENUMERATE_SERVICE));
+    if (!manager) {
+        return {};
+    }
+
+    DWORD resumeHandle = 0;
+    QList<ServiceSummary> services;
+    do {
+        DWORD bytesNeeded = 0;
+        DWORD serviceCount = 0;
+        EnumServicesStatusExW(manager.get(), SC_ENUM_PROCESS_INFO, SERVICE_WIN32,
+                              SERVICE_STATE_ALL, nullptr, 0, &bytesNeeded, &serviceCount,
+                              &resumeHandle, nullptr);
+        if (GetLastError() != ERROR_MORE_DATA || bytesNeeded == 0) {
+            break;
+        }
+
+        std::vector<std::byte> buffer(bytesNeeded);
+        const BOOL succeeded = EnumServicesStatusExW(
+            manager.get(), SC_ENUM_PROCESS_INFO, SERVICE_WIN32, SERVICE_STATE_ALL,
+            reinterpret_cast<LPBYTE>(buffer.data()), bytesNeeded, &bytesNeeded, &serviceCount,
+            &resumeHandle, nullptr);
+        if (!succeeded && GetLastError() != ERROR_MORE_DATA) {
+            break;
+        }
+
+        const auto *entries = reinterpret_cast<const ENUM_SERVICE_STATUS_PROCESSW *>(buffer.data());
+        for (DWORD index = 0; index < serviceCount; ++index) {
+            const QString serviceName = QString::fromWCharArray(entries[index].lpServiceName);
+            const QString displayName = QString::fromWCharArray(entries[index].lpDisplayName);
+            const ServiceHandle service(OpenServiceW(manager.get(), entries[index].lpServiceName,
+                                                     SERVICE_QUERY_CONFIG));
+            const QString commandLine = service ? queryServiceCommand(service.get()) : QString{};
+            const auto engine = classifyService(commandLine, serviceName, displayName);
+            if (!engine.has_value()) {
+                continue;
+            }
+
+            ServiceSummary summary;
+            summary.serviceName = serviceName;
+            summary.displayName = displayName;
+            summary.executablePath = executableFromCommand(commandLine);
+            summary.engine = *engine;
+            summary.port = *engine == DatabaseEngine::PostgreSql ? 5432 : 3306;
+            summary.state = serviceState(entries[index].ServiceStatusProcess.dwCurrentState);
+            summary.observedAt = QDateTime::currentDateTime();
+            services.append(std::move(summary));
+        }
+    } while (resumeHandle != 0);
+    return services;
+#else
+    return {};
+#endif
+}
+
+OperationResult WindowsDatabaseService::start(const QString &serviceName)
+{
+#ifdef Q_OS_WIN
+    const OperationResult directResult = startDirect(serviceName);
+    if (directResult.isSuccess() || directResult.recoveryHint != "DBTOOLKIT_ACCESS_DENIED") {
+        return directResult;
+    }
+    return startWithElevation(serviceName);
+#else
+    Q_UNUSED(serviceName)
+    return OperationResult::unsupported("Windows service control is unavailable on this platform.");
+#endif
+}
+
+OperationResult WindowsDatabaseService::startElevatedHelper(const QString &serviceName)
+{
+#ifdef Q_OS_WIN
+    return startDirect(serviceName);
 #else
     Q_UNUSED(serviceName)
     return OperationResult::unsupported("Windows service control is unavailable on this platform.");

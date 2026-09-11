@@ -8,6 +8,7 @@ class WindowsDatabaseService final {
 public:
     [[nodiscard]] static QList<ServiceSummary> discover();
     [[nodiscard]] static OperationResult start(const QString &serviceName);
+    [[nodiscard]] static OperationResult startElevatedHelper(const QString &serviceName);
 };
 
 } // namespace dbtoolkit
