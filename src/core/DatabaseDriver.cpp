@@ -259,7 +259,8 @@ TableListResult PostgreSqlDriver::listTables(
 
 TablePageResult PostgreSqlDriver::loadTablePage(
     const ConnectionProfile &profile, const ConnectionCredentials &credentials,
-    const QString &databaseName, const QString &schemaName, const QString &tableName) const
+    const QString &databaseName, const QString &schemaName, const QString &tableName,
+    int pageNumber) const
 {
 #ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
     try {
@@ -320,6 +321,12 @@ TablePageResult PostgreSqlDriver::loadTablePage(
         }
         page.orderColumns = chooseStableKey(candidates, page.metadata.columns);
         page.hasStableOrder = !page.orderColumns.isEmpty();
+        page.pageNumber = pageNumber;
+        if (pageNumber > 0 && !page.hasStableOrder) {
+            return {.operation = OperationResult::failure(
+                        "This table has no stable key for reliable pagination.",
+                        "Choose a table with a primary key or non-null unique key.")};
+        }
 
         std::string query = "SELECT * FROM " + transaction.quote_name(schema) + "." +
                             transaction.quote_name(table);
@@ -332,7 +339,7 @@ TablePageResult PostgreSqlDriver::loadTablePage(
                 query += transaction.quote_name(page.orderColumns.at(index).toUtf8().toStdString());
             }
         }
-        query += " LIMIT 101";
+        query += " LIMIT 101 OFFSET " + std::to_string(static_cast<long long>(pageNumber) * 100);
         const pqxx::result dataRows = transaction.exec(query);
         for (const auto &row : dataRows) {
             QList<TableCell> cells;
@@ -368,6 +375,7 @@ TablePageResult PostgreSqlDriver::loadTablePage(
     Q_UNUSED(databaseName)
     Q_UNUSED(schemaName)
     Q_UNUSED(tableName)
+    Q_UNUSED(pageNumber)
     return unavailableTablePage();
 #endif
 }
@@ -535,7 +543,8 @@ TableListResult MySqlDriver::listTables(
 
 TablePageResult MySqlDriver::loadTablePage(
     const ConnectionProfile &profile, const ConnectionCredentials &credentials,
-    const QString &databaseName, const QString &schemaName, const QString &tableName) const
+    const QString &databaseName, const QString &schemaName, const QString &tableName,
+    int pageNumber) const
 {
 #ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
     MYSQL *rawConnection = mysql_init(nullptr);
@@ -633,6 +642,12 @@ TablePageResult MySqlDriver::loadTablePage(
                      });
     page.orderColumns = chooseStableKey(candidates, page.metadata.columns);
     page.hasStableOrder = !page.orderColumns.isEmpty();
+    page.pageNumber = pageNumber;
+    if (pageNumber > 0 && !page.hasStableOrder) {
+        return {.operation = OperationResult::failure(
+                    "This table has no stable key for reliable pagination.",
+                    "Choose a table with a primary key or non-null unique key.")};
+    }
     keyRows.reset();
 
     QString dataQuery = "SELECT * FROM " + quotedTable;
@@ -643,7 +658,7 @@ TablePageResult MySqlDriver::loadTablePage(
         }
         dataQuery += " ORDER BY " + quotedColumns.join(", ");
     }
-    dataQuery += " LIMIT 101";
+    dataQuery += " LIMIT 101 OFFSET " + QString::number(static_cast<qint64>(pageNumber) * 100);
     const QByteArray encodedDataQuery = dataQuery.toUtf8();
     if (mysql_query(connection.get(), encodedDataQuery.constData()) != 0) {
         return {.operation = OperationResult::failure(
@@ -684,6 +699,7 @@ TablePageResult MySqlDriver::loadTablePage(
     Q_UNUSED(databaseName)
     Q_UNUSED(schemaName)
     Q_UNUSED(tableName)
+    Q_UNUSED(pageNumber)
     return unavailableTablePage();
 #endif
 }

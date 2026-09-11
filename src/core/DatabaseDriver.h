@@ -38,7 +38,7 @@ public:
     [[nodiscard]] virtual TablePageResult loadTablePage(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials,
         const QString &databaseName, const QString &schemaName,
-        const QString &tableName) const = 0;
+        const QString &tableName, int pageNumber) const = 0;
 };
 
 class PostgreSqlDriver final : public DatabaseDriver {
@@ -55,7 +55,7 @@ public:
     [[nodiscard]] TablePageResult loadTablePage(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials,
         const QString &databaseName, const QString &schemaName,
-        const QString &tableName) const override;
+        const QString &tableName, int pageNumber) const override;
 };
 
 class MySqlDriver final : public DatabaseDriver {
@@ -74,7 +74,7 @@ public:
     [[nodiscard]] TablePageResult loadTablePage(
         const ConnectionProfile &profile, const ConnectionCredentials &credentials,
         const QString &databaseName, const QString &schemaName,
-        const QString &tableName) const override;
+        const QString &tableName, int pageNumber) const override;
 
 private:
     DatabaseEngine m_engine;

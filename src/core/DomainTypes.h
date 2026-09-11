@@ -136,6 +136,7 @@ struct TablePage {
     TableMetadata metadata;
     QList<QList<TableCell>> rows;
     QStringList orderColumns;
+    int pageNumber{0};
     bool hasStableOrder{false};
     bool hasMoreRows{false};
 };

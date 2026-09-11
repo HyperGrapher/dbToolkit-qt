@@ -469,11 +469,26 @@ Item {
                             Item {
                                 Layout.fillWidth: true
                             }
+                            ActionButton {
+                                text: "Previous"
+                                quiet: true
+                                implicitHeight: 27
+                                enabled: applicationController.tablePageNumber > 0 && !applicationController.isBusy
+                                onClicked: applicationController.previousTablePage()
+                            }
+                            ActionButton {
+                                text: "Next"
+                                quiet: true
+                                implicitHeight: 27
+                                enabled: applicationController.hasMoreRows && applicationController.hasStableRowOrder && !applicationController.isBusy
+                                hint: applicationController.hasStableRowOrder ? "Load the next 100 rows" : "A primary key or non-null unique key is required for reliable paging"
+                                onClicked: applicationController.nextTablePage()
+                            }
                             Text {
                                 text: applicationController.hasMoreRows
-                                      ? "First 100 rows"
+                                      ? "Page " + (applicationController.tablePageNumber + 1) + " · 100 rows"
                                       : applicationController.hasStableRowOrder
-                                        ? "Stable key order"
+                                        ? "Page " + (applicationController.tablePageNumber + 1) + " · stable key order"
                                         : "No stable key"
                                 color: Theme.subtle
                                 font.pixelSize: 10
@@ -539,6 +554,12 @@ Item {
             page.tableName = "";
             page.selectedRow = 0;
             page.selectedColumn = 0;
+        }
+        function onTableDataChanged() {
+            page.selectedRow = -1;
+            page.selectedColumn = -1;
+            page.selectedColumnName = "";
+            page.selectedValue = "No cell selected";
         }
     }
 }

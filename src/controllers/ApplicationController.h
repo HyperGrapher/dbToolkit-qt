@@ -35,6 +35,7 @@ class ApplicationController final : public QObject {
     Q_PROPERTY(int loadedRowCount READ loadedRowCount NOTIFY tableDataChanged)
     Q_PROPERTY(bool hasMoreRows READ hasMoreRows NOTIFY tableDataChanged)
     Q_PROPERTY(bool hasStableRowOrder READ hasStableRowOrder NOTIFY tableDataChanged)
+    Q_PROPERTY(int tablePageNumber READ tablePageNumber NOTIFY tableDataChanged)
     Q_PROPERTY(bool isBusy READ isBusy NOTIFY busyChanged)
     Q_PROPERTY(bool isScanningServices READ isScanningServices NOTIFY scanningServicesChanged)
     Q_PROPERTY(int discoveredServiceCount READ discoveredServiceCount NOTIFY servicesChanged)
@@ -58,6 +59,7 @@ public:
     [[nodiscard]] int loadedRowCount() const;
     [[nodiscard]] bool hasMoreRows() const;
     [[nodiscard]] bool hasStableRowOrder() const;
+    [[nodiscard]] int tablePageNumber() const;
     [[nodiscard]] bool isBusy() const;
     [[nodiscard]] bool isScanningServices() const;
     [[nodiscard]] int discoveredServiceCount() const;
@@ -80,6 +82,8 @@ public:
     Q_INVOKABLE void refreshActiveTables();
     Q_INVOKABLE bool openTable(const QString &schemaName, const QString &tableName);
     Q_INVOKABLE void refreshActiveTable();
+    Q_INVOKABLE void previousTablePage();
+    Q_INVOKABLE void nextTablePage();
     Q_INVOKABLE void copyTableCell(int row, int column);
     Q_INVOKABLE void refreshServices();
     Q_INVOKABLE void startService(const QString &serviceName);
@@ -118,6 +122,7 @@ private:
     QString m_activeTableName;
     bool m_hasMoreRows{false};
     bool m_hasStableRowOrder{false};
+    int m_tablePageNumber{0};
     bool m_isBusy{false};
     bool m_isScanningServices{false};
 };

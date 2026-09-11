@@ -117,6 +117,11 @@ bool ApplicationController::hasStableRowOrder() const
     return m_hasStableRowOrder;
 }
 
+int ApplicationController::tablePageNumber() const
+{
+    return m_tablePageNumber;
+}
+
 bool ApplicationController::isBusy() const
 {
     return m_isBusy;
@@ -457,6 +462,7 @@ bool ApplicationController::openTable(const QString &schemaName, const QString &
     setBusy(false);
     m_activeSchemaName = schemaName;
     m_activeTableName = tableName;
+    m_tablePageNumber = 0;
     clearTableData();
     emit activeTableChanged();
     refreshActiveTable();
@@ -477,6 +483,7 @@ void ApplicationController::refreshActiveTable()
     const QString databaseName = m_activeDatabaseName;
     const QString schemaName = m_activeSchemaName;
     const QString tableName = m_activeTableName;
+    const int pageNumber = m_tablePageNumber;
     ConnectionCredentials credentials = m_sessionCredentials.credentialsFor(profileCopy.id);
     if (credentials.administratorPassword.isEmpty()) {
         emit operationCompleted("refreshTable", false,
@@ -484,15 +491,16 @@ void ApplicationController::refreshActiveTable()
         return;
     }
 
+    clearTableData();
     const quint64 token = m_resultGate.beginWork();
     setBusy(true);
     QPointer<ApplicationController> controller(this);
     QThreadPool::globalInstance()->start(
-        [controller, token, profileCopy, databaseName, schemaName, tableName,
+        [controller, token, profileCopy, databaseName, schemaName, tableName, pageNumber,
          credentials = std::move(credentials)]() mutable {
             const auto driver = createDatabaseDriver(profileCopy.engine);
             TablePageResult result = driver->loadTablePage(profileCopy, credentials, databaseName,
-                                                            schemaName, tableName);
+                                                            schemaName, tableName, pageNumber);
             credentials.administratorPassword.fill(u'\0');
             credentials.administratorPassword.clear();
             if (controller.isNull()) {
@@ -501,12 +509,14 @@ void ApplicationController::refreshActiveTable()
             QMetaObject::invokeMethod(
                 controller.data(),
                 [controller, token, profileId = profileCopy.id, databaseName, schemaName, tableName,
+                 pageNumber,
                  result = std::move(result)]() mutable {
                     if (controller.isNull() || !controller->m_resultGate.isCurrent(token) ||
                         controller->m_activeConnectionId != profileId ||
                         controller->m_activeDatabaseName != databaseName ||
                         controller->m_activeSchemaName != schemaName ||
-                        controller->m_activeTableName != tableName) {
+                        controller->m_activeTableName != tableName ||
+                        controller->m_tablePageNumber != pageNumber) {
                         return;
                     }
                     controller->setBusy(false);
@@ -514,6 +524,7 @@ void ApplicationController::refreshActiveTable()
                         controller->m_columns.replaceColumns(result.page.metadata.columns);
                         controller->m_hasMoreRows = result.page.hasMoreRows;
                         controller->m_hasStableRowOrder = result.page.hasStableOrder;
+                        controller->m_tablePageNumber = result.page.pageNumber;
                         controller->m_tableData.replacePage(std::move(result.page));
                         emit controller->tableDataChanged();
                     }
@@ -522,6 +533,24 @@ void ApplicationController::refreshActiveTable()
                 },
                 Qt::QueuedConnection);
         });
+}
+
+void ApplicationController::previousTablePage()
+{
+    if (m_tablePageNumber <= 0) {
+        return;
+    }
+    --m_tablePageNumber;
+    refreshActiveTable();
+}
+
+void ApplicationController::nextTablePage()
+{
+    if (!m_hasMoreRows || !m_hasStableRowOrder) {
+        return;
+    }
+    ++m_tablePageNumber;
+    refreshActiveTable();
 }
 
 void ApplicationController::copyTableCell(int row, int column)
