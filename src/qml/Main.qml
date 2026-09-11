@@ -462,9 +462,8 @@ ApplicationWindow {
                 toast.open();
                 return;
             }
-            if (applicationController.saveConnection(displayName, engine, host, port, username, password, maintenanceDatabase, serviceName, connectionId)) {
-                applicationController.testActiveConnection();
-            }
+            applicationController.saveAndTestConnection(displayName, engine, host, port, username, password,
+                                                        maintenanceDatabase, serviceName, connectionId);
         }
         onConnectionRemovalRequested: connectionId => applicationController.removeConnection(connectionId)
     }

@@ -4,6 +4,7 @@
 #include <QQuickStyle>
 
 #include "controllers/ApplicationController.h"
+#include "core/AppLog.h"
 #include "services/WindowsDatabaseService.h"
 
 #ifdef Q_OS_WIN
@@ -24,10 +25,13 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("dbToolKit");
     QCoreApplication::setOrganizationName("dbToolKit");
     QCoreApplication::setApplicationVersion("0.1.0");
+    dbtoolkit::AppLog::initialize();
     QQuickStyle::setStyle("Basic");
 
     QQmlApplicationEngine engine;
     dbtoolkit::ApplicationController applicationController;
+    QObject::connect(&applicationController, &dbtoolkit::ApplicationController::operationCompleted,
+                     &applicationController, &dbtoolkit::AppLog::operation);
     engine.rootContext()->setContextProperty("applicationController", &applicationController);
 
     // Exit application if QML fails to load

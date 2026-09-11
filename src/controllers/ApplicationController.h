@@ -72,6 +72,12 @@ public:
                                     const QString &maintenanceDatabase = {},
                                     const QString &serviceName = {},
                                     const QString &connectionId = {});
+    Q_INVOKABLE bool saveAndTestConnection(const QString &displayName, int engine, const QString &host,
+                                           int port, const QString &administratorUser,
+                                           const QString &administratorPassword,
+                                           const QString &maintenanceDatabase = {},
+                                           const QString &serviceName = {},
+                                           const QString &connectionId = {});
     Q_INVOKABLE QVariantMap connectionDetails(const QString &connectionId) const;
     Q_INVOKABLE void removeConnection(const QString &connectionId);
     Q_INVOKABLE void removeActiveConnection();
@@ -102,6 +108,7 @@ signals:
 
 private:
     [[nodiscard]] const ConnectionProfile *activeProfile() const;
+    void testConnection(const QUuid &connectionId, bool discardIfTestFails);
     void setBusy(bool isBusy);
     void setScanningServices(bool isScanning);
     void clearActiveTable();

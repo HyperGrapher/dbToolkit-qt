@@ -24,6 +24,8 @@ endif()
 qt_standard_project_setup(REQUIRES 6.5)
 
 add_library(DbToolKitCore STATIC
+    src/core/AppLog.cpp
+    src/core/AppLog.h
     src/core/DomainTypes.cpp
     src/core/DomainTypes.h
     src/core/DatabaseDriver.cpp

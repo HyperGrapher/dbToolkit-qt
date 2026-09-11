@@ -218,6 +218,22 @@ bool ApplicationController::saveConnection(const QString &displayName, int engin
     return true;
 }
 
+bool ApplicationController::saveAndTestConnection(const QString &displayName, int engine, const QString &host,
+                                                   int port, const QString &administratorUser,
+                                                   const QString &administratorPassword,
+                                                   const QString &maintenanceDatabase,
+                                                   const QString &serviceName,
+                                                   const QString &connectionId)
+{
+    const bool isNewConnection = connectionId.isEmpty();
+    if (!saveConnection(displayName, engine, host, port, administratorUser, administratorPassword,
+                        maintenanceDatabase, serviceName, connectionId)) {
+        return false;
+    }
+    testConnection(m_activeConnectionId, isNewConnection);
+    return true;
+}
+
 QVariantMap ApplicationController::connectionDetails(const QString &connectionId) const
 {
     const ConnectionProfile *profile = m_connections.profile(QUuid(connectionId));
@@ -266,17 +282,35 @@ void ApplicationController::testActiveConnection()
         emit operationCompleted("testConnection", false, "Choose a saved connection first.", {});
         return;
     }
+    testConnection(profile->id, false);
+}
+
+void ApplicationController::testConnection(const QUuid &connectionId, bool discardIfTestFails)
+{
+    const ConnectionProfile *profile = m_connections.profile(connectionId);
+    if (profile == nullptr) {
+        emit operationCompleted("testConnection", false, "The selected connection no longer exists.", {});
+        return;
+    }
     const quint64 token = m_resultGate.beginWork();
     const ConnectionProfile profileCopy = *profile;
     ConnectionCredentials credentials = m_sessionCredentials.credentialsFor(profile->id);
     if (credentials.administratorPassword.isEmpty()) {
+        if (discardIfTestFails) {
+            m_sessionCredentials.remove(profile->id);
+            m_connections.removeProfile(profile->id);
+            if (m_activeConnectionId == profile->id) {
+                setActiveConnectionId({});
+            }
+        }
         emit operationCompleted("testConnection", false,
                                 "Enter an administrator password before testing this connection.", {});
         return;
     }
     setBusy(true);
     QPointer<ApplicationController> controller(this);
-    QThreadPool::globalInstance()->start([controller, token, profileCopy, credentials = std::move(credentials)]() mutable {
+    QThreadPool::globalInstance()->start([controller, token, profileCopy, discardIfTestFails,
+                                          credentials = std::move(credentials)]() mutable {
         const auto driver = createDatabaseDriver(profileCopy.engine);
         const OperationResult result = driver->testConnection(profileCopy, credentials);
         credentials.administratorPassword.fill(u'\0');
@@ -284,12 +318,20 @@ void ApplicationController::testActiveConnection()
         if (controller.isNull()) {
             return;
         }
-        QMetaObject::invokeMethod(controller.data(), [controller, token, profileId = profileCopy.id, result]() {
+        QMetaObject::invokeMethod(controller.data(), [controller, token, profileId = profileCopy.id,
+                                                       discardIfTestFails, result]() {
             if (controller.isNull() || !controller->m_resultGate.isCurrent(token)) {
                 return;
             }
             controller->setBusy(false);
             controller->m_connections.setTestResult(profileId, result.isSuccess(), QDateTime::currentDateTime());
+            if (!result.isSuccess() && discardIfTestFails) {
+                controller->m_sessionCredentials.remove(profileId);
+                controller->m_connections.removeProfile(profileId);
+                if (controller->m_activeConnectionId == profileId) {
+                    controller->setActiveConnectionId({});
+                }
+            }
             controller->operationCompleted("testConnection", result.isSuccess(), result.message,
                                            result.recoveryHint);
             if (result.isSuccess()) {
