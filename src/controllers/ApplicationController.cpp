@@ -1,6 +1,7 @@
 #include "controllers/ApplicationController.h"
 
 #include "core/DatabaseDriver.h"
+#include "core/ProtectedConnections.h"
 #include "services/WindowsDatabaseService.h"
 
 #include <QMetaObject>
@@ -26,6 +27,10 @@ ApplicationController::ApplicationController(QObject *parent)
     , m_serviceResultGate(this)
 {
     qRegisterMetaType<OperationResult>();
+    for (const auto &entry : ProtectedConnections::load()) {
+        m_connections.upsertProfile(entry.profile);
+        m_sessionCredentials.store(entry.profile.id, entry.credentials);
+    }
     QMetaObject::invokeMethod(this, &ApplicationController::refreshServices, Qt::QueuedConnection);
 }
 
@@ -192,6 +197,16 @@ bool ApplicationController::saveConnection(const QString &displayName, int engin
     ConnectionProfile profile;
     const QUuid existingId(connectionId);
     const ConnectionProfile *existingProfile = m_connections.profile(existingId);
+    if (existingProfile == nullptr && connectionId.isEmpty()) {
+        for (int row = 0; row < m_connections.rowCount(); ++row) {
+            const auto *candidate = m_connections.profile(m_connections.data(m_connections.index(row), ConnectionListModel::IdRole).toUuid());
+            if (candidate && int(candidate->engine) == engine && candidate->host.compare(host.trimmed(), Qt::CaseInsensitive) == 0 &&
+                candidate->port == port && candidate->administratorUser == administratorUser.trimmed()) {
+                existingProfile = candidate;
+                break;
+            }
+        }
+    }
     if (existingProfile != nullptr) {
         profile = *existingProfile;
     }
@@ -210,11 +225,16 @@ bool ApplicationController::saveConnection(const QString &displayName, int engin
     if (!administratorPassword.isEmpty()) {
         credentials.administratorPassword = administratorPassword;
     }
+    const auto saved = ProtectedConnections::save({profile, credentials});
+    if (!saved.isSuccess()) {
+        emit operationCompleted("saveConnection", false, saved.message, saved.recoveryHint);
+        return false;
+    }
     m_sessionCredentials.store(profile.id, std::move(credentials));
     m_connections.upsertProfile(profile);
     setActiveConnectionId(profile.id.toString(QUuid::WithoutBraces));
     emit operationCompleted("saveConnection", true,
-                            "Connection saved for this app session. It will be encrypted and persisted with P04.", {});
+                            "Connection saved and protected for your Windows account.", {});
     return true;
 }
 
@@ -225,12 +245,11 @@ bool ApplicationController::saveAndTestConnection(const QString &displayName, in
                                                    const QString &serviceName,
                                                    const QString &connectionId)
 {
-    const bool isNewConnection = connectionId.isEmpty();
     if (!saveConnection(displayName, engine, host, port, administratorUser, administratorPassword,
                         maintenanceDatabase, serviceName, connectionId)) {
         return false;
     }
-    testConnection(m_activeConnectionId, isNewConnection);
+    testConnection(m_activeConnectionId);
     return true;
 }
 
@@ -253,6 +272,10 @@ QVariantMap ApplicationController::connectionDetails(const QString &connectionId
 void ApplicationController::removeConnection(const QString &connectionId)
 {
     const QUuid id(connectionId);
+    if (!id.isNull() && !ProtectedConnections::remove(id)) {
+        emit operationCompleted("removeConnection", false, "Could not remove the protected connection.", {});
+        return;
+    }
     if (id.isNull() || !m_connections.removeProfile(id)) {
         emit operationCompleted("removeConnection", false, "The selected connection no longer exists.", {});
         return;
@@ -261,18 +284,25 @@ void ApplicationController::removeConnection(const QString &connectionId)
     if (m_activeConnectionId == id) {
         setActiveConnectionId({});
     }
-    emit operationCompleted("removeConnection", true, "Connection removed from this app session.", {});
+    emit operationCompleted("removeConnection", true, "Saved connection removed.", {});
 }
 
 void ApplicationController::removeActiveConnection()
 {
-    if (m_activeConnectionId.isNull()) {
-        return;
-    }
+    removeConnection(activeConnectionId());
+}
 
-    m_sessionCredentials.remove(m_activeConnectionId);
-    m_connections.removeProfile(m_activeConnectionId);
-    setActiveConnectionId({});
+bool ApplicationController::connectSavedService(const QString &serviceName)
+{
+    for (int row = 0; row < m_connections.rowCount(); ++row) {
+        const auto index = m_connections.index(row);
+        if (!serviceName.isEmpty() && m_connections.data(index, ConnectionListModel::ServiceNameRole).toString() == serviceName) {
+            setActiveConnectionId(m_connections.data(index, ConnectionListModel::IdRole).toUuid().toString());
+            testActiveConnection();
+            return true;
+        }
+    }
+    return false;
 }
 
 void ApplicationController::testActiveConnection()
@@ -282,10 +312,10 @@ void ApplicationController::testActiveConnection()
         emit operationCompleted("testConnection", false, "Choose a saved connection first.", {});
         return;
     }
-    testConnection(profile->id, false);
+    testConnection(profile->id);
 }
 
-void ApplicationController::testConnection(const QUuid &connectionId, bool discardIfTestFails)
+void ApplicationController::testConnection(const QUuid &connectionId)
 {
     const ConnectionProfile *profile = m_connections.profile(connectionId);
     if (profile == nullptr) {
@@ -296,20 +326,13 @@ void ApplicationController::testConnection(const QUuid &connectionId, bool disca
     const ConnectionProfile profileCopy = *profile;
     ConnectionCredentials credentials = m_sessionCredentials.credentialsFor(profile->id);
     if (credentials.administratorPassword.isEmpty()) {
-        if (discardIfTestFails) {
-            m_sessionCredentials.remove(profile->id);
-            m_connections.removeProfile(profile->id);
-            if (m_activeConnectionId == profile->id) {
-                setActiveConnectionId({});
-            }
-        }
         emit operationCompleted("testConnection", false,
                                 "Enter an administrator password before testing this connection.", {});
         return;
     }
     setBusy(true);
     QPointer<ApplicationController> controller(this);
-    QThreadPool::globalInstance()->start([controller, token, profileCopy, discardIfTestFails,
+    QThreadPool::globalInstance()->start([controller, token, profileCopy,
                                           credentials = std::move(credentials)]() mutable {
         const auto driver = createDatabaseDriver(profileCopy.engine);
         const OperationResult result = driver->testConnection(profileCopy, credentials);
@@ -319,19 +342,12 @@ void ApplicationController::testConnection(const QUuid &connectionId, bool disca
             return;
         }
         QMetaObject::invokeMethod(controller.data(), [controller, token, profileId = profileCopy.id,
-                                                       discardIfTestFails, result]() {
+                                                       result]() {
             if (controller.isNull() || !controller->m_resultGate.isCurrent(token)) {
                 return;
             }
             controller->setBusy(false);
             controller->m_connections.setTestResult(profileId, result.isSuccess(), QDateTime::currentDateTime());
-            if (!result.isSuccess() && discardIfTestFails) {
-                controller->m_sessionCredentials.remove(profileId);
-                controller->m_connections.removeProfile(profileId);
-                if (controller->m_activeConnectionId == profileId) {
-                    controller->setActiveConnectionId({});
-                }
-            }
             controller->operationCompleted("testConnection", result.isSuccess(), result.message,
                                            result.recoveryHint);
             if (result.isSuccess()) {

@@ -75,8 +75,7 @@ std::optional<DatabaseEngine> classifyService(const QString &commandLine, const 
     const QString fileName = QFileInfo(executablePath).fileName().toLower();
     const QString identity = (commandLine + ' ' + serviceName + ' ' + displayName).toLower();
     if (fileName == "postgres.exe" || fileName == "postmaster.exe" ||
-        fileName == "pg_ctl.exe" || fileName == "postgresql.exe" ||
-        identity.contains("postgres")) {
+        fileName == "pg_ctl.exe" || fileName == "postgresql.exe") {
         return DatabaseEngine::PostgreSql;
     }
     if (fileName != "mysqld.exe") {

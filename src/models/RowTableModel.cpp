@@ -61,7 +61,7 @@ QVariant RowTableModel::headerData(int section, Qt::Orientation orientation, int
 
 QHash<int, QByteArray> RowTableModel::roleNames() const
 {
-    return {{DisplayTextRole, "displayText"},
+    return {{Qt::DisplayRole, "display"}, {DisplayTextRole, "displayText"},
             {FullTextRole, "fullText"},
             {ValueKindRole, "valueKind"}};
 }

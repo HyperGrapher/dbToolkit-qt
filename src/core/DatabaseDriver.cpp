@@ -1,4 +1,5 @@
 #include "core/DatabaseDriver.h"
+#include <QCoreApplication>
 
 #ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
 #include <mysql/mysql.h>
@@ -13,6 +14,20 @@
 namespace dbtoolkit {
 
 namespace {
+
+#ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
+MYSQL *initializeMySqlClient()
+{
+    MYSQL *client = mysql_init(nullptr);
+    if (client) {
+        const QByteArray directory = (QCoreApplication::applicationDirPath() + "/mariadb-plugins").toUtf8();
+        mysql_options(client, MYSQL_PLUGIN_DIR, directory.constData());
+        unsigned int timeout = 5;
+        mysql_options(client, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
+    }
+    return client;
+}
+#endif
 
 QString escapePostgreSqlParameter(const QString &value)
 {
@@ -399,7 +414,7 @@ OperationResult MySqlDriver::testConnection(
     const ConnectionProfile &profile, const ConnectionCredentials &credentials) const
 {
 #ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
-    MYSQL *rawConnection = mysql_init(nullptr);
+    MYSQL *rawConnection = initializeMySqlClient();
     if (rawConnection == nullptr) {
         return OperationResult::failure("Could not initialize the MySQL client library.");
     }
@@ -429,7 +444,7 @@ DatabaseListResult MySqlDriver::listDatabases(
     const ConnectionProfile &profile, const ConnectionCredentials &credentials) const
 {
 #ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
-    MYSQL *rawConnection = mysql_init(nullptr);
+    MYSQL *rawConnection = initializeMySqlClient();
     if (rawConnection == nullptr) {
         return {.operation = OperationResult::failure("Could not initialize the MySQL client library.")};
     }
@@ -488,7 +503,7 @@ TableListResult MySqlDriver::listTables(
     const QString &databaseName) const
 {
 #ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
-    MYSQL *rawConnection = mysql_init(nullptr);
+    MYSQL *rawConnection = initializeMySqlClient();
     if (rawConnection == nullptr) {
         return {.operation = OperationResult::failure("Could not initialize the MySQL client library.")};
     }
@@ -547,7 +562,7 @@ TablePageResult MySqlDriver::loadTablePage(
     int pageNumber) const
 {
 #ifdef DBTOOLKIT_WITH_DATABASE_DRIVERS
-    MYSQL *rawConnection = mysql_init(nullptr);
+    MYSQL *rawConnection = initializeMySqlClient();
     if (rawConnection == nullptr) {
         return {.operation = OperationResult::failure("Could not initialize the MySQL client library.")};
     }

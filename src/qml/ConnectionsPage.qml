@@ -132,14 +132,14 @@ Item {
                             font.pixelSize: 11
                         }
                         Text {
-                            text: liveConnectionCard.connectionState === 0 ? "Not tested in this session" : "Tested in this session · credentials stay in memory only"
+                            text: liveConnectionCard.connectionState === 0 ? "Saved securely · ready to connect" : "Credentials protected by your Windows account"
                             color: Theme.subtle
                             font.pixelSize: 10
                         }
                     }
                     Tag {
                         Layout.preferredWidth: 94
-                        text: liveConnectionCard.connectionState === 1 ? "Connected" : liveConnectionCard.connectionState === 2 ? "Offline" : "Not tested"
+                        text: liveConnectionCard.connectionState === 1 ? "Connected" : liveConnectionCard.connectionState === 2 ? "Test failed" : "Not tested"
                         dot: true
                         tone: liveConnectionCard.connectionState === 1 ? Theme.green : liveConnectionCard.connectionState === 2 ? Theme.red : Theme.amber
                     }
@@ -174,7 +174,7 @@ Item {
                 ink: Theme.subtle
             }
             Text {
-                text: "Passwords remain in memory for the current session until encrypted vault storage is enabled."
+                text: "Saved connections are encrypted for your Windows account and available after restart."
                 color: Theme.subtle
                 font.pixelSize: 11
                 wrapMode: Text.WordWrap

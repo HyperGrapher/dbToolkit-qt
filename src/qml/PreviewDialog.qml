@@ -278,7 +278,7 @@ Popup {
                 }
                 Text {
                     visible: dialog.kind === "Edit connection"
-                    text: "Leave blank to keep the current session password."
+                    text: "Leave blank to keep the saved password."
                     color: Theme.subtle
                     font.pixelSize: 10
                 }

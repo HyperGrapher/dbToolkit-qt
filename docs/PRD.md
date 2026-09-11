@@ -35,7 +35,7 @@ important actions understandable and deliberate.
 
 - Make local database setup and maintenance quick to understand.
 - Keep connection details, cached database metadata, and saved credentials available
-  only after the user unlocks the app, including while a database service is offline.
+  automatically on startup, including while a database service is offline.
 - Present database health, content, and ownership in a simple visual workflow.
 - Make destructive operations explicit through clear labels and confirmations.
 - Support both newly created databases and existing databases the user wants
@@ -43,7 +43,7 @@ important actions understandable and deliberate.
 
 ## Key user experience
 
-When the app opens, the user unlocks their local vault and sees the supported local
+When the app opens, the user immediately sees the supported local
 database services. They select or create a server connection. The first connection
 requires the administrator username and password needed by that server. When the
 service is online, the app refreshes its database list and stores an encrypted
@@ -57,12 +57,14 @@ or perform maintenance actions.
 
 ### Secure access and saved connections
 
-- Protect saved local credentials with a master password.
+- Protect saved credentials automatically using Windows account-bound DPAPI encryption.
+- Do not implement a master password, app unlock/lock screens, password recovery,
+  or app locking on Windows session changes. Database authentication passwords remain required.
 - Create, edit, test, select, and remove saved database-server connections.
 - Require an administrator/root password when first connecting to a server that
   needs password authentication. Include masked password fields in connection setup
   and editing, with reveal-on-demand.
-- Store administrator and managed project credentials in the encrypted local vault
+- Store administrator and managed project credentials in protected local storage
   so later features can reconnect without repeatedly prompting.
 - Keep connection details for databases managed by the app available for
   viewing and copying when needed.
@@ -146,7 +148,8 @@ or perform maintenance actions.
 ## Safety and privacy expectations
 
 - The app must never write plain-text passwords to its logs.
-- Stored credentials remain protected until the local vault is unlocked.
+- Stored credentials are encrypted at rest for the current Windows account and loaded
+  automatically. App-data removal never deletes server databases.
 - Destructive actions, including deleting databases, deleting rows, and
   emptying tables, require a confirmation step that explains the effect.
 - Failures should explain what the user can check next, such as an unavailable
@@ -169,7 +172,8 @@ or perform maintenance actions.
 - SQLite — local application data storage.
 - libpqxx — PostgreSQL connectivity.
 - MariaDB Connector/C (`libmariadb`) — MySQL and MariaDB connectivity.
-- libsodium — credential protection.
+- Windows DPAPI — automatic credential protection (built-in; no new package).
+- libsodium — currently declared dependency; not required for DPAPI storage.
 - nlohmann/json — JSON handling.
 - spdlog — application logging.
 - Catch2 — automated tests.

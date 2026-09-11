@@ -3,8 +3,42 @@
 #include "models/ConnectionListModel.h"
 #include "models/RowTableModel.h"
 #include "models/TableListModel.h"
+#include "core/ProtectedConnections.h"
+#include <QStandardPaths>
+#include <QFile>
 
 #include <catch2/catch_test_macros.hpp>
+
+TEST_CASE("Windows protected connections survive reload without plaintext credentials", "[storage]")
+{
+#ifdef Q_OS_WIN
+    QStandardPaths::setTestModeEnabled(true);
+    dbtoolkit::StoredConnection entry;
+    entry.profile.displayName = "Storage regression";
+    entry.profile.host = "127.0.0.1";
+    entry.profile.port = 5432;
+    entry.credentials.administratorPassword = "test-only-secret-123";
+    const auto saved = dbtoolkit::ProtectedConnections::save(entry);
+    REQUIRE(saved.isSuccess());
+    const auto loaded = dbtoolkit::ProtectedConnections::load();
+    bool found = false;
+    for (const auto &candidate : loaded) {
+        if (candidate.profile.id == entry.profile.id) {
+            found = candidate.credentials.administratorPassword == entry.credentials.administratorPassword;
+        }
+    }
+    QFile file(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) +
+               "/connections/" + entry.profile.id.toString(QUuid::WithoutBraces) + ".protected");
+    const bool opened = file.open(QIODevice::ReadOnly);
+    const auto bytes = file.readAll();
+    file.close();
+    REQUIRE(dbtoolkit::ProtectedConnections::remove(entry.profile.id));
+    REQUIRE(found);
+    REQUIRE(opened);
+    REQUIRE_FALSE(bytes.contains("test-only-secret-123"));
+    QStandardPaths::setTestModeEnabled(false);
+#endif
+}
 
 TEST_CASE("A stale-result gate rejects work from an obsolete selection", "[architecture]")
 {
@@ -87,6 +121,7 @@ TEST_CASE("Row table model preserves null, empty, and binary values", "[architec
 
     REQUIRE(model.rowCount() == 1);
     REQUIRE(model.columnCount() == 3);
+    REQUIRE(model.roleNames().value(Qt::DisplayRole) == "display");
     REQUIRE(model.headerData(2, Qt::Horizontal).toString() == "payload");
     REQUIRE(model.data(model.index(0, 0), dbtoolkit::RowTableModel::ValueKindRole).toInt() == 1);
     REQUIRE(model.data(model.index(0, 1), dbtoolkit::RowTableModel::DisplayTextRole).toString() ==

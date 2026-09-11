@@ -24,6 +24,8 @@ endif()
 qt_standard_project_setup(REQUIRES 6.5)
 
 add_library(DbToolKitCore STATIC
+    src/core/ProtectedConnections.cpp
+    src/core/ProtectedConnections.h
     src/core/AppLog.cpp
     src/core/AppLog.h
     src/core/DomainTypes.cpp
@@ -56,7 +58,7 @@ add_library(DbToolKitCore STATIC
 target_include_directories(DbToolKitCore PUBLIC src)
 target_link_libraries(DbToolKitCore PUBLIC Qt6::Core Qt6::Gui)
 if(WIN32)
-    target_link_libraries(DbToolKitCore PRIVATE advapi32 shell32)
+    target_link_libraries(DbToolKitCore PRIVATE advapi32 shell32 crypt32)
 endif()
 if(NOT DBTOOLKIT_UI_PREVIEW)
     target_compile_definitions(DbToolKitCore PRIVATE DBTOOLKIT_WITH_DATABASE_DRIVERS=1)
@@ -69,6 +71,12 @@ endif()
 qt_add_executable(DbToolKit WIN32
     src/main.cpp
 )
+if(WIN32 AND NOT DBTOOLKIT_UI_PREVIEW)
+    add_custom_command(TARGET DbToolKit POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/$<$<CONFIG:Debug>:debug/>plugins/libmariadb"
+        "$<TARGET_FILE_DIR:DbToolKit>/mariadb-plugins")
+endif()
 
 if(WIN32)
     target_sources(DbToolKit PRIVATE resources/app.rc)

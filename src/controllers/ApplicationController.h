@@ -82,6 +82,7 @@ public:
     Q_INVOKABLE void removeConnection(const QString &connectionId);
     Q_INVOKABLE void removeActiveConnection();
     Q_INVOKABLE void testActiveConnection();
+    Q_INVOKABLE bool connectSavedService(const QString &serviceName);
     Q_INVOKABLE void cancelActiveWork();
     Q_INVOKABLE void refreshActiveDatabases();
     Q_INVOKABLE bool openDatabase(const QString &databaseName);
@@ -108,7 +109,7 @@ signals:
 
 private:
     [[nodiscard]] const ConnectionProfile *activeProfile() const;
-    void testConnection(const QUuid &connectionId, bool discardIfTestFails);
+    void testConnection(const QUuid &connectionId);
     void setBusy(bool isBusy);
     void setScanningServices(bool isScanning);
     void clearActiveTable();

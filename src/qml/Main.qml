@@ -353,6 +353,9 @@ ApplicationWindow {
                 onBrowseRequested: databaseName => window.openViewerFromWorkspace(databaseName)
                 onActionRequested: action => window.showAction(action)
                 onConnectRequested: (engine, displayName, port, serviceName) => {
+                    if (applicationController.connectSavedService(serviceName)) {
+                        return;
+                    }
                     previewDialog.prepareConnection(engine, displayName, port, serviceName);
                     previewDialog.kind = "Add connection";
                     previewDialog.open();
